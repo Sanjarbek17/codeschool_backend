@@ -39193,7 +39193,7 @@ A.ZW.prototype={
 xl(a){return this.ah3(a)},
 ah3(a){var s=0,r=A.S(t.N),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f
 var $async$xl=A.T(function(b,c){if(b===1){o.push(c)
-s=p}while(true)switch(s){case 0:g="http://127.0.0.1:8000/editor/execute/"
+s=p}while(true)switch(s){case 0:g="https://sanjar1718.pythonanywhere.com/editor/execute/"
 p=4
 j=t.N
 j=A.ac(["code",a],j,j)
