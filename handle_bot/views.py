@@ -9,7 +9,7 @@ import requests
 from telegram import Update
 from telegram.ext import Application
 
-from .codewars_bot.bot import handler
+from .codewars_bot.main import handler
 from .codewars_bot.config import TELEGRAM_BOT_TOKEN
 
 application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
