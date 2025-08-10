@@ -43,8 +43,16 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "apps.editor",
+    "rest_framework.authtoken",
     "corsheaders",
+    
+    # Local apps
+    "apps.accounts",
+    "apps.courses", 
+    "apps.assignments",
+    "apps.progress",
+    "apps.submissions",
+    "apps.editor",
 ]
 
 MIDDLEWARE = [
@@ -139,10 +147,19 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Custom User Model
+AUTH_USER_MODEL = 'accounts.User'
+
 # REST framework settings
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
+    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",
