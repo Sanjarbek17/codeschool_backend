@@ -6,5 +6,5 @@ from core import settings
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("editor/", include("editor.urls")),
+    path("editor/", include("apps.editor.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

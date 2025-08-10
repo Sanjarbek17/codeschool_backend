@@ -1,0 +1,29 @@
+{
+  "folders": [
+    {
+      "name": "🏠 CodeSchool Backend",
+      "path": "."
+    },
+    {
+      "name": "📱 Django Apps",
+      "path": "./apps"
+    },
+    {
+      "name": "⚙️ Core Settings",
+      "path": "./core"
+    }
+  ],
+  "settings": {
+    "python.defaultInterpreterPath": "./env/bin/python",
+    "python.terminal.activateEnvironment": true
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-python.python",
+      "ms-python.black-formatter",
+      "ms-python.flake8",
+      "batisteo.vscode-django",
+      "wholroyd.jinja"
+    ]
+  }
+}
