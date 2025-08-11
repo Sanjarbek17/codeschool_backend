@@ -4,9 +4,15 @@ from . import views
 app_name = 'accounts'
 
 urlpatterns = [
-    # URL patterns will be added here when views are created
-    # Example:
-    # path('login/', views.LoginView.as_view(), name='login'),
-    # path('register/', views.RegisterView.as_view(), name='register'),
-    # path('profile/', views.ProfileView.as_view(), name='profile'),
+    # Authentication endpoints
+    path('register/', views.RegisterView.as_view(), name='register'),
+    path('login/', views.LoginView.as_view(), name='login'),
+    path('logout/', views.LogoutView.as_view(), name='logout'),
+    
+    # Profile management
+    path('profile/', views.ProfileView.as_view(), name='profile'),
+    path('change-password/', views.ChangePasswordView.as_view(), name='change-password'),
+    
+    # Utility endpoints
+    path('status/', views.user_status, name='user-status'),
 ]
