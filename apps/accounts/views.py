@@ -39,7 +39,6 @@ class RegisterView(APIView):
                         "user": {
                             "id": 1,
                             "username": "teacher1",
-                            "email": "teacher@example.com",
                             "profile_type": "teacher",
                             "profile_data": {
                                 "first_name": "John",
