@@ -1,12 +1,14 @@
-from django.urls import path
-from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import HomeworkProgressViewSet, TaskProgressViewSet
+
+# Create router for ViewSets
+router = DefaultRouter()
+router.register(r'homework-progress', HomeworkProgressViewSet, basename='homework-progress')
+router.register(r'task-progress', TaskProgressViewSet, basename='task-progress')
 
 app_name = 'progress'
 
 urlpatterns = [
-    # URL patterns will be added here when views are created
-    # Example:
-    # path('homework-progress/', views.HomeworkProgressView.as_view(), name='homework-progress'),
-    # path('task-progress/', views.TaskProgressView.as_view(), name='task-progress'),
-    # path('analytics/', views.AnalyticsView.as_view(), name='analytics'),
+    path('', include(router.urls)),
 ]
