@@ -1,12 +1,17 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from . import views
 
 app_name = 'assignments'
 
+# Create router and register viewsets
+router = DefaultRouter()
+router.register(r'homework', views.HomeworkViewSet)
+router.register(r'tasks', views.TaskViewSet)
+
 urlpatterns = [
-    # URL patterns will be added here when views are created
-    # Example:
-    # path('homework/', views.HomeworkListView.as_view(), name='homework-list'),
-    # path('homework/<int:pk>/', views.HomeworkDetailView.as_view(), name='homework-detail'),
-    # path('tasks/', views.TaskListView.as_view(), name='task-list'),
+    # Include router URLs
+    path('', include(router.urls)),
+    
+    # Additional custom endpoints can be added here
 ]
