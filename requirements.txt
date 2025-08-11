@@ -1,3 +1,5 @@
 Django
 djangorestframework
 django-cors-headers  # For handling Cross-Origin Resource Sharing (CORS)
+django-filter  # For filtering querysets in DRF
+drf-yasg  # For Swagger/OpenAPI documentation

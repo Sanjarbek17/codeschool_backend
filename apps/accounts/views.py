@@ -5,6 +5,8 @@ from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import login, logout
 from django.contrib.auth import get_user_model
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from .serializers import (
     UserRegistrationSerializer,
     UserLoginSerializer,
@@ -17,11 +19,50 @@ User = get_user_model()
 
 class RegisterView(APIView):
     """
-    API view for user registration.
-    Creates new user account with Teacher or Student profile.
+    User Registration API
+    
+    Creates a new user account with either Teacher or Student profile.
+    Returns user data and authentication token upon successful registration.
     """
     permission_classes = [permissions.AllowAny]
 
+    @swagger_auto_schema(
+        operation_description="Register a new user account (Teacher or Student)",
+        operation_summary="User Registration",
+        request_body=UserRegistrationSerializer,
+        responses={
+            201: openapi.Response(
+                description="User registered successfully",
+                examples={
+                    "application/json": {
+                        "message": "User registered successfully",
+                        "user": {
+                            "id": 1,
+                            "username": "teacher1",
+                            "email": "teacher@example.com",
+                            "profile_type": "teacher",
+                            "profile_data": {
+                                "first_name": "John",
+                                "last_name": "Doe",
+                                "phone_number": "+1234567890"
+                            }
+                        },
+                        "token": "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="Validation errors",
+                examples={
+                    "application/json": {
+                        "username": ["This field is required."],
+                        "password": ["This password is too short."]
+                    }
+                }
+            )
+        },
+        tags=['Authentication']
+    )
     def post(self, request):
         """Register a new user."""
         serializer = UserRegistrationSerializer(data=request.data)
@@ -47,11 +88,48 @@ class RegisterView(APIView):
 
 class LoginView(APIView):
     """
-    API view for user login.
-    Authenticates user and returns authentication token.
+    User Login API
+    
+    Authenticates user credentials and returns authentication token.
     """
     permission_classes = [permissions.AllowAny]
 
+    @swagger_auto_schema(
+        operation_description="Authenticate user credentials and get access token",
+        operation_summary="User Login",
+        request_body=UserLoginSerializer,
+        responses={
+            200: openapi.Response(
+                description="Login successful",
+                examples={
+                    "application/json": {
+                        "message": "Login successful",
+                        "user": {
+                            "id": 1,
+                            "username": "teacher1",
+                            "email": "teacher@example.com",
+                            "profile_type": "teacher",
+                            "profile_data": {
+                                "first_name": "John",
+                                "last_name": "Doe",
+                                "phone_number": "+1234567890"
+                            }
+                        },
+                        "token": "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="Invalid credentials",
+                examples={
+                    "application/json": {
+                        "non_field_errors": ["Invalid username or password."]
+                    }
+                }
+            )
+        },
+        tags=['Authentication']
+    )
     def post(self, request):
         """Login user and return token."""
         serializer = UserLoginSerializer(
@@ -83,11 +161,37 @@ class LoginView(APIView):
 
 class LogoutView(APIView):
     """
-    API view for user logout.
-    Deletes the user's authentication token.
+    User Logout API
+    
+    Deletes the user's authentication token and logs them out.
     """
     permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Logout user by deleting authentication token",
+        operation_summary="User Logout",
+        responses={
+            200: openapi.Response(
+                description="Logout successful",
+                examples={
+                    "application/json": {
+                        "message": "Logout successful"
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="No active session found",
+                examples={
+                    "application/json": {
+                        "error": "No active session found"
+                    }
+                }
+            ),
+            401: "Unauthorized - Invalid or missing token"
+        },
+        tags=['Authentication'],
+        security=[{'Token': []}]
+    )
     def post(self, request):
         """Logout user by deleting token."""
         try:
@@ -109,16 +213,80 @@ class LogoutView(APIView):
 
 class ProfileView(APIView):
     """
-    API view for user profile management.
-    Get and update user profile information.
+    User Profile Management API
+    
+    Get and update user profile information for authenticated users.
     """
     permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Get current user profile information",
+        operation_summary="Get User Profile",
+        responses={
+            200: openapi.Response(
+                description="User profile data",
+                examples={
+                    "application/json": {
+                        "id": 1,
+                        "username": "teacher1",
+                        "email": "teacher@example.com",
+                        "profile_type": "teacher",
+                        "profile_data": {
+                            "first_name": "John",
+                            "last_name": "Doe",
+                            "phone_number": "+1234567890",
+                            "created_at": "2025-08-11T00:00:00Z"
+                        }
+                    }
+                }
+            ),
+            401: "Unauthorized - Invalid or missing token"
+        },
+        tags=['Authentication'],
+        security=[{'Token': []}]
+    )
     def get(self, request):
         """Get current user profile."""
         serializer = UserProfileSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(
+        operation_description="Update current user profile information",
+        operation_summary="Update User Profile",
+        request_body=UserProfileSerializer,
+        responses={
+            200: openapi.Response(
+                description="Profile updated successfully",
+                examples={
+                    "application/json": {
+                        "message": "Profile updated successfully",
+                        "user": {
+                            "id": 1,
+                            "username": "teacher1",
+                            "email": "newemail@example.com",
+                            "profile_type": "teacher",
+                            "profile_data": {
+                                "first_name": "Updated John",
+                                "last_name": "Updated Doe",
+                                "phone_number": "+1234567891"
+                            }
+                        }
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="Validation errors",
+                examples={
+                    "application/json": {
+                        "email": ["Enter a valid email address."]
+                    }
+                }
+            ),
+            401: "Unauthorized - Invalid or missing token"
+        },
+        tags=['Authentication'],
+        security=[{'Token': []}]
+    )
     def put(self, request):
         """Update user profile."""
         serializer = UserProfileSerializer(
