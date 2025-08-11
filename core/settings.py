@@ -135,10 +135,10 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
-# Add the static files directory for the Flutter web app
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "flutter_web/static"),
-]
+# Static files directories
+# STATICFILES_DIRS = [
+#     # Add paths to static files directories here if needed
+# ]
 
 # Media files configuration
 MEDIA_URL = "/media/"
