@@ -11,7 +11,7 @@ from core import settings
 schema_view = get_schema_view(
     openapi.Info(
         title="CodeSchool Backend API",
-        default_version='v1',
+        default_version="v1",
         description="""
         ## CodeSchool Backend API Documentation
         
@@ -49,19 +49,23 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    
     # API Documentation
-    path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-    
+    path(
+        "swagger<format>/", schema_view.without_ui(cache_timeout=0), name="schema-json"
+    ),
+    path(
+        "swagger/",
+        schema_view.with_ui("swagger", cache_timeout=0),
+        name="schema-swagger-ui",
+    ),
+    path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
     # API endpoints
     path("api/auth/", include("apps.accounts.urls")),
     path("api/courses/", include("apps.courses.urls")),
     path("api/assignments/", include("apps.assignments.urls")),
     path("api/progress/", include("apps.progress.urls")),
     path("api/submissions/", include("apps.submissions.urls")),
-    
+    path("api/teachers/", include("apps.teacher_mgmt.urls")),
     # Editor endpoints
     path("editor/", include("apps.editor.urls")),
 ]
