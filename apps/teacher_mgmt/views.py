@@ -127,6 +127,14 @@ class TeacherGroupsView(ListAPIView):
     permission_classes = [IsTeacher]
     serializer_class = TeacherGroupSerializer
 
+    def get_queryset(self):
+        teacher = self.request.user.teacher_profile
+        return (
+            teacher.groups.all()
+            .annotate(student_count=Count("students"), teacher_count=Count("teachers"))
+            .order_by("name")
+        )
+
     @swagger_auto_schema(
         operation_description="Get list of groups that the teacher teaches",
         operation_summary="Teacher's Groups",
@@ -141,13 +149,8 @@ class TeacherGroupsView(ListAPIView):
         },
         tags=["Teacher Management"],
     )
-    def get_queryset(self):
-        teacher = self.request.user.teacher_profile
-        return (
-            teacher.groups.all()
-            .annotate(student_count=Count("students"), teacher_count=Count("teachers"))
-            .order_by("name")
-        )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
 
 class TeacherGroupDetailView(APIView):
