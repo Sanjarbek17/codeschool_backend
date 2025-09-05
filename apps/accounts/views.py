@@ -368,6 +368,7 @@ class GroupListCreateView(ListCreateAPIView):
     @swagger_auto_schema(
         operation_description="List all groups",
         operation_summary="Get Groups List",
+        tags=["Group Management"],
         responses={200: GroupListSerializer(many=True)},
     )
     def get(self, request, *args, **kwargs):
@@ -376,6 +377,7 @@ class GroupListCreateView(ListCreateAPIView):
     @swagger_auto_schema(
         operation_description="Create a new group",
         operation_summary="Create Group",
+        tags=["Group Management"],
         request_body=GroupCreateUpdateSerializer,
         responses={201: GroupSerializer},
     )
@@ -403,6 +405,7 @@ class GroupDetailView(RetrieveUpdateDestroyAPIView):
     @swagger_auto_schema(
         operation_description="Get detailed group information",
         operation_summary="Get Group Detail",
+        tags=["Group Management"],
         responses={200: GroupSerializer},
     )
     def get(self, request, *args, **kwargs):
@@ -411,6 +414,7 @@ class GroupDetailView(RetrieveUpdateDestroyAPIView):
     @swagger_auto_schema(
         operation_description="Update group information",
         operation_summary="Update Group",
+        tags=["Group Management"],
         request_body=GroupCreateUpdateSerializer,
         responses={200: GroupSerializer},
     )
@@ -420,6 +424,7 @@ class GroupDetailView(RetrieveUpdateDestroyAPIView):
     @swagger_auto_schema(
         operation_description="Partially update group information",
         operation_summary="Partially Update Group",
+        tags=["Group Management"],
         request_body=GroupCreateUpdateSerializer,
         responses={200: GroupSerializer},
     )
@@ -429,6 +434,7 @@ class GroupDetailView(RetrieveUpdateDestroyAPIView):
     @swagger_auto_schema(
         operation_description="Delete group",
         operation_summary="Delete Group",
+        tags=["Group Management"],
         responses={204: "Group deleted successfully"},
     )
     def delete(self, request, *args, **kwargs):
