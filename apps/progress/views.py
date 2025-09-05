@@ -46,27 +46,60 @@ class HomeworkProgressViewSet(viewsets.ModelViewSet):
 
     permission_classes = [permissions.IsAuthenticated]
 
-    @swagger_auto_schema(tags=["Progress"])
+    @swagger_auto_schema(
+        operation_description="List homework progress records with filtering based on user role",
+        operation_summary="List Homework Progress",
+        tags=["Progress"],
+        responses={200: HomeworkProgressListSerializer(many=True)},
+    )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["Progress"])
+    @swagger_auto_schema(
+        operation_description="Create a new homework progress record",
+        operation_summary="Create Homework Progress",
+        tags=["Progress"],
+        request_body=HomeworkProgressCreateUpdateSerializer,
+        responses={201: HomeworkProgressSerializer},
+    )
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["Progress"])
+    @swagger_auto_schema(
+        operation_description="Retrieve detailed homework progress information",
+        operation_summary="Get Homework Progress Detail",
+        tags=["Progress"],
+        responses={200: HomeworkProgressSerializer},
+    )
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["Progress"])
+    @swagger_auto_schema(
+        operation_description="Update homework progress record",
+        operation_summary="Update Homework Progress",
+        tags=["Progress"],
+        request_body=HomeworkProgressCreateUpdateSerializer,
+        responses={200: HomeworkProgressSerializer},
+    )
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["Progress"])
+    @swagger_auto_schema(
+        operation_description="Partially update homework progress record",
+        operation_summary="Partially Update Homework Progress",
+        tags=["Progress"],
+        request_body=HomeworkProgressCreateUpdateSerializer,
+        responses={200: HomeworkProgressSerializer},
+    )
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["Progress"])
+    @swagger_auto_schema(
+        operation_description="Delete homework progress record",
+        operation_summary="Delete Homework Progress",
+        tags=["Progress"],
+        responses={204: "Progress record deleted successfully"},
+    )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
@@ -119,6 +152,52 @@ class HomeworkProgressViewSet(viewsets.ModelViewSet):
 
         return [permission() for permission in permission_classes]
 
+    @swagger_auto_schema(
+        operation_description="Get current student's homework progress with optional filtering",
+        operation_summary="My Progress",
+        tags=["Progress"],
+        manual_parameters=[
+            openapi.Parameter(
+                "lesson",
+                openapi.IN_QUERY,
+                description="Filter by lesson ID",
+                type=openapi.TYPE_INTEGER,
+                required=False,
+            ),
+            openapi.Parameter(
+                "homework",
+                openapi.IN_QUERY,
+                description="Filter by homework ID",
+                type=openapi.TYPE_INTEGER,
+                required=False,
+            ),
+            openapi.Parameter(
+                "completed",
+                openapi.IN_QUERY,
+                description="Filter by completion status (true/false)",
+                type=openapi.TYPE_BOOLEAN,
+                required=False,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Student progress retrieved successfully",
+                examples={
+                    "application/json": [
+                        {
+                            "id": 1,
+                            "homework_title": "Python Basics",
+                            "lesson_title": "Introduction to Python",
+                            "solved_tasks": 3,
+                            "total_tasks": 5,
+                            "completion_percentage": 60.0,
+                            "is_completed": False,
+                        }
+                    ]
+                },
+            )
+        },
+    )
     @action(detail=False, methods=["get"])
     def my_progress(self, request):
         """Get current student's homework progress."""
@@ -146,6 +225,26 @@ class HomeworkProgressViewSet(viewsets.ModelViewSet):
         serializer = HomeworkProgressListSerializer(progress, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_description="Get student progress summary with statistics",
+        operation_summary="Progress Summary",
+        tags=["Progress"],
+        responses={
+            200: openapi.Response(
+                description="Progress summary retrieved successfully",
+                examples={
+                    "application/json": {
+                        "student_name": "John Doe",
+                        "total_homework": 10,
+                        "completed_homework": 7,
+                        "completion_rate": 70.0,
+                        "average_score": 85.5,
+                        "total_time_spent": 320,
+                    }
+                },
+            )
+        },
+    )
     @action(detail=False, methods=["get"])
     def summary(self, request):
         """Get student progress summary."""

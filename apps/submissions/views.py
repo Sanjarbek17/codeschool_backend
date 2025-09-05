@@ -42,27 +42,63 @@ class HomeworkSubmissionViewSet(viewsets.ModelViewSet):
 
     permission_classes = [permissions.IsAuthenticated]
 
-    @swagger_auto_schema(tags=["Submissions"])
+    @swagger_auto_schema(
+        operation_description="List homework submissions with filtering based on user role",
+        operation_summary="List Submissions",
+        tags=["Submissions"],
+        responses={200: HomeworkSubmissionListSerializer(many=True)},
+    )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["Submissions"])
+    @swagger_auto_schema(
+        operation_description="Create a new homework submission (students only)",
+        operation_summary="Create Submission",
+        tags=["Submissions"],
+        request_body=HomeworkSubmissionCreateSerializer,
+        responses={201: HomeworkSubmissionSerializer},
+    )
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["Submissions"])
+    @swagger_auto_schema(
+        operation_description="Retrieve detailed submission information",
+        operation_summary="Get Submission Detail",
+        tags=["Submissions"],
+        responses={200: HomeworkSubmissionSerializer},
+    )
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["Submissions"])
+    @swagger_auto_schema(
+        operation_description="Update a submission (teachers/admins only)",
+        operation_summary="Update Submission",
+        tags=["Submissions"],
+        request_body=HomeworkSubmissionUpdateSerializer,
+        responses={200: HomeworkSubmissionSerializer},
+    )
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["Submissions"])
+    @swagger_auto_schema(
+        operation_description="Partially update a submission (teachers/admins only)",
+        operation_summary="Partially Update Submission",
+        tags=["Submissions"],
+        request_body=HomeworkSubmissionUpdateSerializer,
+        responses={200: HomeworkSubmissionSerializer},
+    )
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["Submissions"])
+    @swagger_auto_schema(
+        operation_description="Delete a submission (teachers/admins only)",
+        operation_summary="Delete Submission",
+        tags=["Submissions"],
+        responses={204: "Submission deleted successfully"},
+    )
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
@@ -132,6 +168,38 @@ class HomeworkSubmissionViewSet(viewsets.ModelViewSet):
 
         return super().create(request, *args, **kwargs)
 
+    @swagger_auto_schema(
+        operation_description="Get current student's submissions with optional filtering",
+        operation_summary="My Submissions",
+        tags=["Submissions"],
+        manual_parameters=[
+            openapi.Parameter(
+                "task",
+                openapi.IN_QUERY,
+                description="Filter by task ID",
+                type=openapi.TYPE_INTEGER,
+                required=False,
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="Student submissions retrieved successfully",
+                examples={
+                    "application/json": [
+                        {
+                            "id": 1,
+                            "task_title": "Calculate Sum",
+                            "homework_title": "Python Basics",
+                            "is_successful": True,
+                            "passed_tests": 5,
+                            "total_tests": 5,
+                            "submitted_at": "2023-09-05T10:30:00Z",
+                        }
+                    ]
+                },
+            )
+        },
+    )
     @action(detail=False, methods=["get"])
     def my_submissions(self, request):
         """Get current student's submissions."""
@@ -151,6 +219,41 @@ class HomeworkSubmissionViewSet(viewsets.ModelViewSet):
         serializer = HomeworkSubmissionListSerializer(submissions, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_description="Get submission statistics for teachers with optional filtering",
+        operation_summary="Submission Statistics",
+        tags=["Submissions"],
+        manual_parameters=[
+            openapi.Parameter(
+                "lesson",
+                openapi.IN_QUERY,
+                description="Filter by lesson ID",
+                type=openapi.TYPE_INTEGER,
+                required=False,
+            ),
+            openapi.Parameter(
+                "homework",
+                openapi.IN_QUERY,
+                description="Filter by homework ID",
+                type=openapi.TYPE_INTEGER,
+                required=False,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Submission statistics retrieved successfully",
+                examples={
+                    "application/json": {
+                        "total_submissions": 150,
+                        "successful_submissions": 120,
+                        "success_rate": 80.0,
+                        "average_execution_time": 2.5,
+                        "top_performers": [],
+                    }
+                },
+            )
+        },
+    )
     @action(detail=False, methods=["get"])
     def statistics(self, request):
         """Get submission statistics for teachers."""
@@ -375,27 +478,60 @@ class TestCaseViewSet(viewsets.ModelViewSet):
 
     permission_classes = [permissions.IsAuthenticated]
 
-    @swagger_auto_schema(tags=["Submissions"])
+    @swagger_auto_schema(
+        operation_description="List test cases with filtering based on user role",
+        operation_summary="List Test Cases",
+        tags=["Submissions"],
+        responses={200: TestCaseListSerializer(many=True)},
+    )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["Submissions"])
+    @swagger_auto_schema(
+        operation_description="Create a new test case (teachers/admins only)",
+        operation_summary="Create Test Case",
+        tags=["Submissions"],
+        request_body=TestCaseCreateSerializer,
+        responses={201: TestCaseSerializer},
+    )
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["Submissions"])
+    @swagger_auto_schema(
+        operation_description="Retrieve detailed test case information",
+        operation_summary="Get Test Case Detail",
+        tags=["Submissions"],
+        responses={200: TestCaseSerializer},
+    )
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["Submissions"])
+    @swagger_auto_schema(
+        operation_description="Update a test case (teachers/admins only)",
+        operation_summary="Update Test Case",
+        tags=["Submissions"],
+        request_body=TestCaseCreateSerializer,
+        responses={200: TestCaseSerializer},
+    )
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["Submissions"])
+    @swagger_auto_schema(
+        operation_description="Partially update a test case (teachers/admins only)",
+        operation_summary="Partially Update Test Case",
+        tags=["Submissions"],
+        request_body=TestCaseCreateSerializer,
+        responses={200: TestCaseSerializer},
+    )
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["Submissions"])
+    @swagger_auto_schema(
+        operation_description="Delete a test case (teachers/admins only)",
+        operation_summary="Delete Test Case",
+        tags=["Submissions"],
+        responses={204: "Test case deleted successfully"},
+    )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
