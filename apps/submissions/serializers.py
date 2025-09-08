@@ -141,7 +141,7 @@ class HomeworkSubmissionCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """Create submission with current user as student."""
         request = self.context["request"]
-        validated_data["student"] = request.user.student
+        validated_data["student"] = request.user.student_profile
 
         # Remove auto_test from validated_data as it's not a model field
         auto_test = validated_data.pop("auto_test", True)

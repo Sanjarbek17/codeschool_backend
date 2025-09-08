@@ -115,20 +115,20 @@ class HomeworkSubmissionViewSet(viewsets.ModelViewSet):
                 .prefetch_related("task__homework__lesson__teachers")
             )
 
-        elif hasattr(user, "teacher"):
+        elif hasattr(user, "teacher_profile"):
             # Teachers see submissions for their assigned lessons
             return (
                 HomeworkSubmission.objects.filter(
-                    task__homework__lesson__teachers=user.teacher
+                    task__homework__lesson__teachers=user.teacher_profile
                 )
                 .select_related("student__user", "task__homework__lesson")
                 .prefetch_related("task__homework__lesson__teachers")
             )
 
-        elif hasattr(user, "student"):
+        elif hasattr(user, "student_profile"):
             # Students see only their own submissions
             return (
-                HomeworkSubmission.objects.filter(student=user.student)
+                HomeworkSubmission.objects.filter(student=user.student_profile)
                 .select_related("student__user", "task__homework__lesson")
                 .prefetch_related("task__homework__lesson__teachers")
             )
@@ -161,7 +161,7 @@ class HomeworkSubmissionViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """Create a new submission with automatic testing."""
-        if not hasattr(request.user, "student"):
+        if not hasattr(request.user, "student_profile"):
             return Response(
                 {"error": "Only students can create submissions"},
                 status=status.HTTP_403_FORBIDDEN,
@@ -261,13 +261,13 @@ class HomeworkSubmissionViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def my_submissions(self, request):
         """Get current student's submissions."""
-        if not hasattr(request.user, "student"):
+        if not hasattr(request.user, "student_profile"):
             return Response(
                 {"error": "Only students can access this endpoint"},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        submissions = self.get_queryset().filter(student=request.user.student)
+        submissions = self.get_queryset().filter(student=request.user.student_profile)
 
         # Optional filtering
         task_id = request.query_params.get("task")
@@ -315,7 +315,10 @@ class HomeworkSubmissionViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def statistics(self, request):
         """Get submission statistics for teachers."""
-        if not hasattr(request.user, "teacher") and not request.user.is_superuser:
+        if (
+            not hasattr(request.user, "teacher_profile")
+            and not request.user.is_superuser
+        ):
             return Response(
                 {"error": "Only teachers can access statistics"},
                 status=status.HTTP_403_FORBIDDEN,
@@ -360,7 +363,10 @@ class HomeworkSubmissionViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def evaluate(self, request, pk=None):
         """Evaluate a submission (teachers/admins only)."""
-        if not hasattr(request.user, "teacher") and not request.user.is_superuser:
+        if (
+            not hasattr(request.user, "teacher_profile")
+            and not request.user.is_superuser
+        ):
             return Response(
                 {"error": "Only teachers can evaluate submissions"},
                 status=status.HTTP_403_FORBIDDEN,
@@ -423,7 +429,10 @@ class HomeworkSubmissionViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def auto_test(self, request, pk=None):
         """Automatically re-test a submission using the automated testing system."""
-        if not hasattr(request.user, "teacher") and not request.user.is_superuser:
+        if (
+            not hasattr(request.user, "teacher_profile")
+            and not request.user.is_superuser
+        ):
             return Response(
                 {"error": "Only teachers can re-test submissions"},
                 status=status.HTTP_403_FORBIDDEN,
@@ -497,7 +506,10 @@ class HomeworkSubmissionViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def task_analytics(self, request):
         """Get detailed analytics for tasks (teachers only)."""
-        if not hasattr(request.user, "teacher") and not request.user.is_superuser:
+        if (
+            not hasattr(request.user, "teacher_profile")
+            and not request.user.is_superuser
+        ):
             return Response(
                 {"error": "Only teachers can access analytics"},
                 status=status.HTTP_403_FORBIDDEN,
@@ -520,9 +532,9 @@ class HomeworkSubmissionViewSet(viewsets.ModelViewSet):
             )
 
         # Check if teacher has access to this task
-        if hasattr(request.user, "teacher") and not request.user.is_superuser:
+        if hasattr(request.user, "teacher_profile") and not request.user.is_superuser:
             if not task.homework.lesson.teachers.filter(
-                id=request.user.teacher.id
+                id=request.user.teacher_profile.id
             ).exists():
                 return Response(
                     {"error": "You do not have access to this task"},
@@ -703,18 +715,18 @@ class TestCaseViewSet(viewsets.ModelViewSet):
             # Admins see all test cases
             return TestCase.objects.all().select_related("task__homework__lesson")
 
-        elif hasattr(user, "teacher"):
+        elif hasattr(user, "teacher_profile"):
             # Teachers see test cases for their assigned lessons
             return TestCase.objects.filter(
-                task__homework__lesson__teachers=user.teacher
+                task__homework__lesson__teachers=user.teacher_profile
             ).select_related("task__homework__lesson")
 
-        elif hasattr(user, "student"):
+        elif hasattr(user, "student_profile"):
             # Students see only non-hidden test cases for lessons they're enrolled in
             from apps.progress.models import StudentProgress
 
             enrolled_lessons = StudentProgress.objects.filter(
-                student=user.student
+                student=user.student_profile
             ).values_list("lesson", flat=True)
 
             return TestCase.objects.filter(
@@ -731,7 +743,7 @@ class TestCaseViewSet(viewsets.ModelViewSet):
             return TestCaseListSerializer
         elif self.action == "create":
             return TestCaseCreateSerializer
-        elif hasattr(user, "student"):
+        elif hasattr(user, "student_profile"):
             # Students get filtered view
             return TestCaseStudentSerializer
         return TestCaseSerializer

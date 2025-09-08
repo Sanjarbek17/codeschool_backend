@@ -185,12 +185,12 @@ class TestCodeView(APIView):
             )
 
         # Check if user is a student and has access to this task
-        if hasattr(request.user, "student"):
+        if hasattr(request.user, "student_profile"):
             from apps.progress.models import StudentProgress
 
             # Check if student is enrolled in the lesson
             if not StudentProgress.objects.filter(
-                student=request.user.student, lesson=task.homework.lesson
+                student=request.user.student_profile, lesson=task.homework.lesson
             ).exists():
                 return Response(
                     {"error": "You are not enrolled in this lesson"},

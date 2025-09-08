@@ -1,0 +1,250 @@
+###
+# CodeSchool Backend API - Student User Flow
+# This file demonstrates the complete student user flow in the platform
+# Base URL: http://localhost:8000
+###
+
+### Variables
+@baseUrl = http://localhost:8000
+@studentToken = 9839f6be18386f98251bd42e629751c0dbcedcde
+
+###
+# STEP 1: AUTHENTICATION
+# Student logs in to get authentication token
+POST {{baseUrl}}/api/auth/login/
+Content-Type: application/json
+
+{
+    "username": "student_1",
+    "password": "password123"
+}
+
+###
+# STEP 1b: Get Student Profile Information
+# Check current user status and profile details
+GET {{baseUrl}}/api/auth/profile/
+Authorization: Token {{studentToken}}
+
+###
+# STEP 2: GET ASSIGNED GROUPS
+# Student views all groups they are assigned to
+GET {{baseUrl}}/api/auth/groups/
+Authorization: Token {{studentToken}}
+
+### 
+# STEP 2b: Get Specific Group Details
+# Get detailed information about a specific group (replace 1 with actual group ID)
+GET {{baseUrl}}/api/auth/groups/7/
+Authorization: Token {{studentToken}}
+
+###
+# STEP 3: GET LESSONS FOR GROUPS
+# Student views all available lessons
+# This will show lessons that are taught by teachers in the student's groups
+GET {{baseUrl}}/api/courses/lessons/
+Authorization: Token {{studentToken}}
+
+###
+# STEP 3b: Get Specific Lesson Details
+# Get detailed information about a specific lesson (replace 1 with actual lesson ID)
+GET {{baseUrl}}/api/courses/lessons/7/
+Authorization: Token {{studentToken}}
+
+###
+# STEP 4: GET HOMEWORK FOR LESSONS
+# Student views all homework assignments
+# This will show homework related to lessons in their groups
+GET {{baseUrl}}/api/assignments/homework/
+Authorization: Token {{studentToken}}
+
+###
+# STEP 4b: Get Specific Homework Details
+# Get detailed information about a specific homework (replace 1 with actual homework ID)
+GET {{baseUrl}}/api/assignments/homework/4/
+Authorization: Token {{studentToken}}
+
+###
+# STEP 5: GET TASKS FOR HOMEWORK
+# Student views all tasks within homework assignments
+GET {{baseUrl}}/api/assignments/tasks/
+Authorization: Token {{studentToken}}
+
+###
+# STEP 5b: Get Specific Task Details
+# Get detailed information about a specific task (replace 1 with actual task ID)
+GET {{baseUrl}}/api/assignments/tasks/15/
+Authorization: Token {{studentToken}}
+
+###
+# STEP 6: GET TEST CASES FOR TASK (if visible to students)
+# Student views test cases for a specific task to understand requirements
+GET {{baseUrl}}/api/submissions/test-cases/
+Authorization: Token {{studentToken}}
+
+###
+# STEP 7: SUBMIT SOLUTION FOR TASK
+# Student submits their code solution for a specific task
+POST {{baseUrl}}/api/submissions/submissions/
+Authorization: Token {{studentToken}}
+Content-Type: application/json
+
+{
+    "task": 15,
+    "code_text": "def solve_problem():\n    # Student's solution here\n    result = 'Hello World'\n    return result\n\nprint(solve_problem())",
+    "total_tests": 3
+}
+
+###
+# STEP 7b: Submit Solution with File Upload
+# Alternative way to submit solution with file upload
+POST {{baseUrl}}/api/submissions/submissions/
+Authorization: Token {{studentToken}}
+Content-Type: multipart/form-data
+
+{
+    "task": 15,
+    "code_text": "def fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)\n\nprint(fibonacci(10))",
+    "total_tests": 5,
+    "file_upload": "@/path/to/solution.py"
+}
+
+###
+# STEP 8: GET SUBMISSION HISTORY
+# Student views their submission history for all tasks
+GET {{baseUrl}}/api/submissions/submissions/
+Authorization: Token {{studentToken}}
+
+###
+# STEP 8b: Get Specific Submission Details
+# Get details of a specific submission (replace 1 with actual submission ID)
+GET {{baseUrl}}/api/submissions/submissions/1/
+Authorization: Token {{studentToken}}
+
+###
+# STEP 9: CHECK HOMEWORK PROGRESS
+# Student checks their progress on homework assignments
+GET {{baseUrl}}/api/progress/homework-progress/
+Authorization: Token {{studentToken}}
+
+###
+# STEP 9b: Get Specific Homework Progress
+# Get progress details for a specific homework (replace 1 with actual progress ID)
+GET {{baseUrl}}/api/progress/homework-progress/1/
+Authorization: Token {{studentToken}}
+
+###
+# STEP 10: CHECK TASK PROGRESS
+# Student checks their progress on individual tasks
+GET {{baseUrl}}/api/progress/task-progress/
+Authorization: Token {{studentToken}}
+
+###
+# STEP 10b: Get Specific Task Progress
+# Get progress details for a specific task (replace 1 with actual progress ID)
+GET {{baseUrl}}/api/progress/task-progress/1/
+Authorization: Token {{studentToken}}
+
+###
+# STEP 11: UPDATE HOMEWORK PROGRESS
+# Student or system updates homework completion status
+PUT {{baseUrl}}/api/progress/homework-progress/1/
+Authorization: Token {{studentToken}}
+Content-Type: application/json
+
+{
+    "is_completed": true,
+    "completion_date": "2025-09-08",
+    "notes": "All tasks completed successfully"
+}
+
+###
+# STEP 12: UPDATE TASK PROGRESS
+# Student or system updates task completion status
+PUT {{baseUrl}}/api/progress/task-progress/1/
+Authorization: Token {{studentToken}}
+Content-Type: application/json
+
+{
+    "is_completed": true,
+    "completion_date": "2025-09-08",
+    "score": 95,
+    "attempts": 3
+}
+
+###
+# STEP 13: FILTER HOMEWORK BY LESSON
+# Student filters homework by specific lesson
+GET {{baseUrl}}/api/assignments/homework/?lesson=1
+Authorization: Token {{studentToken}}
+
+###
+# STEP 14: FILTER TASKS BY HOMEWORK
+# Student filters tasks by specific homework
+GET {{baseUrl}}/api/assignments/tasks/?homework=1
+Authorization: Token {{studentToken}}
+
+###
+# STEP 15: FILTER SUBMISSIONS BY TASK
+# Student views submissions for a specific task
+GET {{baseUrl}}/api/submissions/submissions/?task=1
+Authorization: Token {{studentToken}}
+
+###
+# STEP 16: GET ATTENDANCE RECORDS
+# Student views their attendance records for lessons
+GET {{baseUrl}}/api/courses/attendance/
+Authorization: Token {{studentToken}}
+
+###
+# STEP 17: EXECUTE CODE IN EDITOR
+# Student tests their code in the online code editor before submission
+POST {{baseUrl}}/editor/execute/
+Authorization: Token {{studentToken}}
+Content-Type: application/json
+
+{
+    "code": "def test_function():\n    return 'Hello from student code editor!'\n\nprint(test_function())",
+    "language": "python"
+}
+
+###
+# WORKFLOW SUMMARY FOR STUDENTS:
+# 
+# 1. Login and get authentication token
+# 2. View profile and assigned groups
+# 3. Browse lessons available in their groups
+# 4. View homework assignments for those lessons
+# 5. Explore individual tasks within homework
+# 6. Test code solutions in the editor
+# 7. Submit solutions for tasks
+# 8. Check submission results and test outcomes
+# 9. Monitor homework and task progress
+# 10. View attendance records
+# 
+# This flow allows students to:
+# - See their learning path clearly
+# - Work on assignments systematically
+# - Track their progress effectively
+# - Test code before submission
+# - Review their performance history
+
+###
+# ADDITIONAL STUDENT FEATURES:
+# 
+# Filter and Search Operations:
+# - Filter homework by lesson
+# - Filter tasks by homework
+# - Filter submissions by task
+# - Search for specific lessons or assignments
+# 
+# Progress Tracking:
+# - View completion status for all homework
+# - See individual task progress
+# - Monitor submission success rates
+# - Track attendance in lessons
+# 
+# Code Development:
+# - Use online code editor for testing
+# - Submit multiple versions of solutions
+# - View test case results
+# - Check execution time and memory usage
