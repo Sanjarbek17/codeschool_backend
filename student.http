@@ -82,6 +82,30 @@ GET {{baseUrl}}/api/submissions/test-cases/
 Authorization: Token {{studentToken}}
 
 ###
+# STEP 6b: TEST CODE SOLUTION BEFORE SUBMISSION
+# Student tests their code solution against task test cases to verify correctness
+POST {{baseUrl}}/editor/test/
+Authorization: Token {{studentToken}}
+Content-Type: application/json
+
+{
+    "task_id": 15,
+    "code": "def solve_problem():\n    # Student's solution here\n    result = 'Hello World'\n    return result\n\nprint(solve_problem())"
+}
+
+###
+# STEP 6c: TEST CODE SOLUTION THAT PASSES
+# Example of testing code that should pass the test case
+POST {{baseUrl}}/editor/test/
+Authorization: Token {{studentToken}}
+Content-Type: application/json
+
+{
+    "task_id": 15,
+    "code": "print('Central thought nor Democrat perhaps role simply take.')"
+}
+
+###
 # STEP 7: SUBMIT SOLUTION FOR TASK
 # Student submits their code solution for a specific task
 POST {{baseUrl}}/api/submissions/submissions/
@@ -215,8 +239,10 @@ Content-Type: application/json
 # 3. Browse lessons available in their groups
 # 4. View homework assignments for those lessons
 # 5. Explore individual tasks within homework
-# 6. Test code solutions in the editor
-# 7. Submit solutions for tasks
+# 6. Review test cases to understand requirements
+# 6b. Test code solutions before submission (iterative process)
+# 6c. Verify passing test cases
+# 7. Submit final solutions for tasks
 # 8. Check submission results and test outcomes
 # 9. Monitor homework and task progress
 # 10. View attendance records
@@ -224,8 +250,9 @@ Content-Type: application/json
 # This flow allows students to:
 # - See their learning path clearly
 # - Work on assignments systematically
+# - Test and iterate on solutions before submission
+# - Verify correctness against test cases
 # - Track their progress effectively
-# - Test code before submission
 # - Review their performance history
 
 ###

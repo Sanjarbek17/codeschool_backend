@@ -186,12 +186,19 @@ class TestCodeView(APIView):
 
         # Check if user is a student and has access to this task
         if hasattr(request.user, "student_profile"):
-            from apps.progress.models import StudentProgress
+            # Check if student has access to this lesson
+            # A student has access if they're in a group that has a teacher who teaches this lesson
+            student_groups = request.user.student_profile.groups.all()
+            lesson_teachers = task.homework.lesson.teachers.all()
 
-            # Check if student is enrolled in the lesson
-            if not StudentProgress.objects.filter(
-                student=request.user.student_profile, lesson=task.homework.lesson
-            ).exists():
+            # Check if any of the lesson's teachers are in any of the student's groups
+            has_access = False
+            for group in student_groups:
+                if lesson_teachers.filter(groups=group).exists():
+                    has_access = True
+                    break
+
+            if not has_access:
                 return Response(
                     {"error": "You are not enrolled in this lesson"},
                     status=status.HTTP_403_FORBIDDEN,
