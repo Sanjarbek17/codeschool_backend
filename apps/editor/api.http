@@ -1,0 +1,376 @@
+###
+# CodeSchool Backend API Testing
+# Test file for the new automated testing system
+# Base URL: http://localhost:8000
+###
+
+### Variables
+@baseUrl = http://localhost:8000
+@adminToken = your_admin_token_here
+@teacherToken = 9452db2d6edc004c7e1d2794f1cbbb2e8af9b968  
+@studentToken = 9839f6be18386f98251bd42e629751c0dbcedcde
+
+###
+# 1. AUTHENTICATION - Get Teacher Token
+# Login to get authentication token for a teacher
+POST {{baseUrl}}/api/auth/login/
+Content-Type: application/json
+
+{
+    "username": "teacher_1",
+    "password": "password123"
+}
+
+###
+# 1b. AUTHENTICATION - Get Student Token  
+# Login to get authentication token for a student
+POST {{baseUrl}}/api/auth/login/
+Content-Type: application/json
+
+{
+    "username": "student_1", 
+    "password": "password123"
+}
+
+###
+# 1c. AUTHENTICATION - Get Admin Token
+# Login to get authentication token for admin
+POST {{baseUrl}}/api/auth/login/
+Content-Type: application/json
+
+{
+    "username": "admin",
+    "password": "admin123"
+}
+
+###
+# 2. EDITOR - Execute Code Securely
+# Test the enhanced secure code execution
+POST {{baseUrl}}/editor/execute/
+Content-Type: application/json
+Authorization: Token {{teacherToken}}
+
+{
+    "code": "print('Hello, CodeSchool!')\nresult = 5 * 6\nprint(f'5 * 6 = {result}')",
+    "timeout": 10,
+    "input_data": ""
+}
+
+###
+# 3. EDITOR - Execute Code with Input
+# Test code execution with input data
+POST {{baseUrl}}/editor/execute/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "name = input('Enter your name: ')\nprint(f'Hello, {name}!')",
+    "timeout": 5,
+    "input_data": "John Doe"
+}
+
+###
+# 4. EDITOR - Execute Factorial Function
+# Test a more complex function
+POST {{baseUrl}}/editor/execute/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n-1)\n\nprint(f'Factorial of 5: {factorial(5)}')\nprint(f'Factorial of 0: {factorial(0)}')",
+    "timeout": 30
+}
+
+###
+# 5. EDITOR - Test Security (Restricted Import)
+# This should fail due to security restrictions
+POST {{baseUrl}}/editor/execute/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "import os\nprint(os.getcwd())",
+    "timeout": 10
+}
+
+###
+# 6. EDITOR - Test Timeout Protection
+# This should timeout (infinite loop)
+POST {{baseUrl}}/editor/execute/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "while True:\n    pass",
+    "timeout": 2
+}
+
+###
+# 7. GET TASK ID - List Tasks to Get a Valid Task ID
+# First get a task ID for testing
+GET {{baseUrl}}/api/assignments/tasks/
+Authorization: Token {{studentToken}}
+
+###
+# 8. EDITOR - Test Code Against Task Test Cases
+# Test student code against visible test cases for a specific task
+# Replace task_id with actual ID from previous request
+POST {{baseUrl}}/editor/test/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n-1)",
+    "task_id": 18
+}
+
+###
+# 9. EDITOR - Test Incorrect Code Against Task
+# Test code that should fail some test cases
+POST {{baseUrl}}/editor/test/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "def factorial(n):\n    return 120",
+    "task_id": 1
+}
+
+###
+# 10. EDITOR - Test Prime Number Function
+# Test a different type of function
+POST {{baseUrl}}/editor/test/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "def is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True",
+    "task_id": 2
+}
+
+###
+# 11. SUBMISSIONS - Create Submission with Auto-Testing
+# Submit homework with automatic testing enabled
+POST {{baseUrl}}/api/submissions/submissions/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "task": 1,
+    "code_text": "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n-1)",
+    "auto_test": true
+}
+
+###
+# 12. SUBMISSIONS - Create Submission without Auto-Testing
+# Submit homework without automatic testing
+POST {{baseUrl}}/api/submissions/submissions/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "task": 1,
+    "code_text": "def factorial(n):\n    result = 1\n    for i in range(1, n + 1):\n        result *= i\n    return result",
+    "auto_test": false
+}
+
+###
+# 13. SUBMISSIONS - Get List of Submissions
+# View all submissions to get submission IDs
+GET {{baseUrl}}/api/submissions/submissions/
+Authorization: Token {{teacherToken}}
+
+###
+# 14. SUBMISSIONS - Re-test Specific Submission (Teacher Only)
+# Teacher manually re-runs tests on a submission
+# Replace {submission_id} with actual ID from previous request
+POST {{baseUrl}}/api/submissions/submissions/1/auto_test/
+Content-Type: application/json
+Authorization: Token {{teacherToken}}
+
+###
+# 15. TEST CASES - View Test Cases for a Task
+# Get test cases for a specific task
+GET {{baseUrl}}/api/submissions/test-cases/task_test_cases/?task=1
+Authorization: Token {{teacherToken}}
+
+###
+# 16. TEST CASES - Create New Test Case (Teacher Only)
+# Teacher creates a new test case
+POST {{baseUrl}}/api/submissions/test-cases/
+Content-Type: application/json
+Authorization: Token {{teacherToken}}
+
+{
+    "task": 1,
+    "test_code": "assert factorial(6) == 720",
+    "hidden": false,
+    "input_data": "6",
+    "expected_output": "720",
+    "timeout_seconds": 15
+}
+
+###
+# 17. COMPLEX CODE TESTING - Fibonacci Function
+# Test a recursive Fibonacci implementation
+POST {{baseUrl}}/editor/execute/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "def fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)\n\nfor i in range(10):\n    print(f'fib({i}) = {fibonacci(i)}')",
+    "timeout": 30
+}
+
+###
+# 18. COMPLEX CODE TESTING - List Operations
+# Test various list operations
+POST {{baseUrl}}/editor/execute/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "numbers = [1, 2, 3, 4, 5]\nprint(f'Original list: {numbers}')\nprint(f'Sum: {sum(numbers)}')\nprint(f'Max: {max(numbers)}')\nprint(f'Reversed: {list(reversed(numbers))}')\nsquares = [x**2 for x in numbers]\nprint(f'Squares: {squares}')",
+    "timeout": 10
+}
+
+###
+# 19. ERROR HANDLING - Syntax Error
+# Test code with syntax errors
+POST {{baseUrl}}/editor/execute/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "print('Hello World'\n# Missing closing parenthesis",
+    "timeout": 5
+}
+
+###
+# 20. ERROR HANDLING - Runtime Error
+# Test code with runtime errors
+POST {{baseUrl}}/editor/execute/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "def divide(a, b):\n    return a / b\n\nprint(divide(10, 2))\nprint(divide(10, 0))  # This will cause ZeroDivisionError",
+    "timeout": 10
+}
+
+###
+# 21. PERFORMANCE TESTING - Memory Usage
+# Test code that uses more memory
+POST {{baseUrl}}/editor/execute/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "# Create a large list\nlarge_list = list(range(10000))\nprint(f'Created list with {len(large_list)} elements')\nprint(f'First 10: {large_list[:10]}')\nprint(f'Last 10: {large_list[-10:]}')",
+    "timeout": 15
+}
+
+###
+# 22. STRING MANIPULATION - Test String Functions
+# Test various string operations
+POST {{baseUrl}}/editor/execute/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "text = 'Hello, CodeSchool!'\nprint(f'Original: {text}')\nprint(f'Uppercase: {text.upper()}')\nprint(f'Lowercase: {text.lower()}')\nprint(f'Length: {len(text)}')\nprint(f'Reversed: {text[::-1]}')\nwords = text.split()\nprint(f'Words: {words}')",
+    "timeout": 10
+}
+
+###
+# 23. MATHEMATICAL OPERATIONS - Test Math Functions
+# Test mathematical calculations
+POST {{baseUrl}}/editor/execute/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "import math\n\n# Basic operations\nprint(f'Square root of 16: {math.sqrt(16)}')\nprint(f'2 to the power of 8: {math.pow(2, 8)}')\nprint(f'PI: {math.pi}')\nprint(f'Sine of 90 degrees: {math.sin(math.radians(90))}')\n\n# Calculate area of circle\nradius = 5\narea = math.pi * radius ** 2\nprint(f'Area of circle with radius {radius}: {area:.2f}')",
+    "timeout": 10
+}
+
+###
+# 24. SUBMISSIONS - My Submissions (Student View)
+# Student views their own submissions
+GET {{baseUrl}}/api/submissions/submissions/my_submissions/
+Authorization: Token {{studentToken}}
+
+###
+# 25. SUBMISSIONS - Submission Statistics (Teacher View)
+# Teacher views submission statistics
+GET {{baseUrl}}/api/submissions/submissions/statistics/
+Authorization: Token {{teacherToken}}
+
+###
+# 26. EDGE CASE - Empty Code
+# Test with empty code
+POST {{baseUrl}}/editor/execute/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "",
+    "timeout": 5
+}
+
+###
+# 27. EDGE CASE - Very Long Timeout
+# Test with very long timeout (should be limited by system)
+POST {{baseUrl}}/editor/execute/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "print('This should execute normally')",
+    "timeout": 300
+}
+
+###
+# 28. FUNCTIONAL PROGRAMMING - Lambda Functions
+# Test lambda functions and functional programming
+POST {{baseUrl}}/editor/execute/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]\n\n# Filter even numbers\neven_numbers = list(filter(lambda x: x % 2 == 0, numbers))\nprint(f'Even numbers: {even_numbers}')\n\n# Square all numbers\nsquared = list(map(lambda x: x**2, numbers))\nprint(f'Squared: {squared}')\n\n# Sum of all numbers\ntotal = sum(numbers)\nprint(f'Sum: {total}')",
+    "timeout": 10
+}
+
+###
+# 29. DATA STRUCTURES - Dictionary Operations
+# Test dictionary operations
+POST {{baseUrl}}/editor/execute/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "# Student grades dictionary\ngrades = {\n    'Alice': 95,\n    'Bob': 87,\n    'Charlie': 92,\n    'Diana': 88\n}\n\nprint('Student Grades:')\nfor name, grade in grades.items():\n    print(f'{name}: {grade}')\n\naverage = sum(grades.values()) / len(grades)\nprint(f'\\nAverage grade: {average:.2f}')\n\n# Find highest grade\ntop_student = max(grades, key=grades.get)\nprint(f'Top student: {top_student} with {grades[top_student]}')",
+    "timeout": 10
+}
+
+###
+# 30. FINAL TEST - Complete Programming Challenge
+# Test a complete programming solution
+POST {{baseUrl}}/editor/test/
+Content-Type: application/json
+Authorization: Token {{studentToken}}
+
+{
+    "code": "def bubble_sort(arr):\n    \"\"\"Sort array using bubble sort algorithm\"\"\"\n    n = len(arr)\n    for i in range(n):\n        for j in range(0, n - i - 1):\n            if arr[j] > arr[j + 1]:\n                arr[j], arr[j + 1] = arr[j + 1], arr[j]\n    return arr\n\n# Test the function\ntest_array = [64, 34, 25, 12, 22, 11, 90]\nprint(f'Original array: {test_array}')\nsorted_array = bubble_sort(test_array.copy())\nprint(f'Sorted array: {sorted_array}')",
+    "task_id": 3
+}
+
+###
+# NOTE: Before running these tests:
+# 1. Make sure the Django server is running: python manage.py runserver
+# 2. Create some dummy data: python manage.py create_all_dummy_data
+# 3. Get authentication tokens by logging in with test users
+# 4. Replace the token variables at the top with actual tokens
+# 5. Replace task_id values with actual task IDs from your database
+###
