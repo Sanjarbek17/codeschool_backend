@@ -27,6 +27,7 @@ from apps.accounts.permissions import (
     IsAssignedTeacherOrAdmin,
     IsStudentOrAdmin,
 )
+from apps.editor.services import AutomatedTestRunner
 
 User = get_user_model()
 
@@ -159,14 +160,71 @@ class HomeworkSubmissionViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def create(self, request, *args, **kwargs):
-        """Create a new submission (students only)."""
+        """Create a new submission with automatic testing."""
         if not hasattr(request.user, "student"):
             return Response(
                 {"error": "Only students can create submissions"},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        return super().create(request, *args, **kwargs)
+        # Create the submission first
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        submission = serializer.save()
+
+        # Check if auto-testing is enabled and code is provided
+        auto_test = request.data.get("auto_test", True)  # Default to True
+
+        if auto_test and submission.code_text:
+            try:
+                # Run automated tests
+                test_runner = AutomatedTestRunner()
+                test_results = test_runner.evaluate_and_update_submission(submission)
+
+                # Refresh submission from database to get updated values
+                submission.refresh_from_db()
+
+                # Return detailed response with test results
+                response_data = HomeworkSubmissionSerializer(submission).data
+                response_data["test_results"] = {
+                    "auto_tested": True,
+                    "total_tests": test_results.total_tests,
+                    "passed_tests": test_results.passed_tests,
+                    "success_rate": test_results.success_rate,
+                    "execution_time": test_results.overall_execution_time,
+                    "memory_usage": test_results.max_memory_usage,
+                    "individual_results": [
+                        {
+                            "passed": result.passed,
+                            "output": result.output,
+                            "error": result.error,
+                            "execution_time": result.execution_time,
+                            "timeout": result.timeout,
+                        }
+                        for result in test_results.test_results
+                    ],
+                }
+
+                return Response(response_data, status=status.HTTP_201_CREATED)
+
+            except Exception as e:
+                # If automated testing fails, still return the submission
+                # but indicate that testing failed
+                response_data = HomeworkSubmissionSerializer(submission).data
+                response_data["test_results"] = {
+                    "auto_tested": False,
+                    "error": f"Automated testing failed: {str(e)}",
+                    "note": "Submission saved successfully, but automatic testing encountered an error",
+                }
+                return Response(response_data, status=status.HTTP_201_CREATED)
+        else:
+            # No auto-testing requested or no code provided
+            response_data = HomeworkSubmissionSerializer(submission).data
+            response_data["test_results"] = {
+                "auto_tested": False,
+                "note": "Automatic testing was not performed",
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
 
     @swagger_auto_schema(
         operation_description="Get current student's submissions with optional filtering",
@@ -333,6 +391,108 @@ class HomeworkSubmissionViewSet(viewsets.ModelViewSet):
 
         serializer = HomeworkSubmissionSerializer(submission)
         return Response(serializer.data)
+
+    @swagger_auto_schema(
+        operation_description="Automatically re-test a submission against all test cases",
+        operation_summary="Auto Re-test Submission",
+        tags=["Submissions"],
+        responses={
+            200: openapi.Response(
+                description="Submission re-tested successfully",
+                examples={
+                    "application/json": {
+                        "submission_id": 1,
+                        "total_tests": 5,
+                        "passed_tests": 3,
+                        "success_rate": 60.0,
+                        "previous_score": 2,
+                        "updated": True,
+                    }
+                },
+            ),
+            403: openapi.Response(
+                description="Permission denied",
+                examples={
+                    "application/json": {
+                        "error": "Only teachers can re-test submissions"
+                    }
+                },
+            ),
+        },
+    )
+    @action(detail=True, methods=["post"])
+    def auto_test(self, request, pk=None):
+        """Automatically re-test a submission using the automated testing system."""
+        if not hasattr(request.user, "teacher") and not request.user.is_superuser:
+            return Response(
+                {"error": "Only teachers can re-test submissions"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        submission = self.get_object()
+
+        if not submission.code_text:
+            return Response(
+                {"error": "No code found in this submission"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            # Store previous results for comparison
+            previous_passed = submission.passed_tests
+            previous_total = submission.total_tests
+
+            # Run automated tests
+            test_runner = AutomatedTestRunner()
+            test_results = test_runner.evaluate_and_update_submission(submission)
+
+            # Refresh submission from database
+            submission.refresh_from_db()
+
+            return Response(
+                {
+                    "submission_id": submission.id,
+                    "student_name": submission.student.user.get_full_name(),
+                    "task_title": submission.task.title,
+                    "previous_score": {
+                        "passed_tests": previous_passed,
+                        "total_tests": previous_total,
+                        "success_rate": (
+                            (previous_passed / previous_total * 100)
+                            if previous_total > 0
+                            else 0
+                        ),
+                    },
+                    "new_score": {
+                        "passed_tests": test_results.passed_tests,
+                        "total_tests": test_results.total_tests,
+                        "success_rate": test_results.success_rate,
+                    },
+                    "execution_details": {
+                        "execution_time": test_results.overall_execution_time,
+                        "memory_usage": test_results.max_memory_usage,
+                    },
+                    "updated": True,
+                    "test_summary": {
+                        "total_test_cases": len(test_results.test_results),
+                        "passed_count": sum(
+                            1 for r in test_results.test_results if r.passed
+                        ),
+                        "failed_count": sum(
+                            1 for r in test_results.test_results if not r.passed
+                        ),
+                        "timeout_count": sum(
+                            1 for r in test_results.test_results if r.timeout
+                        ),
+                    },
+                }
+            )
+
+        except Exception as e:
+            return Response(
+                {"error": f"Automated testing failed: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     @action(detail=False, methods=["get"])
     def task_analytics(self, request):

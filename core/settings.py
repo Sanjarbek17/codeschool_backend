@@ -200,3 +200,49 @@ REDOC_SETTINGS = {
     "HIDE_HOSTNAME": True,
     "EXPAND_RESPONSES": "all",
 }
+
+# Automated Testing Settings
+AUTOMATED_TESTING = {
+    # Default timeout for code execution (seconds)
+    "DEFAULT_TIMEOUT": 30,
+    # Maximum memory limit for code execution (MB)
+    "MEMORY_LIMIT_MB": 128,
+    # Enable/disable automated testing on submission
+    "AUTO_TEST_ON_SUBMISSION": True,
+    # Maximum file size for code submissions (bytes)
+    "MAX_CODE_SIZE": 1024 * 1024,  # 1MB
+    # Restricted imports for security
+    "RESTRICTED_IMPORTS": {
+        "os",
+        "sys",
+        "subprocess",
+        "shutil",
+        "glob",
+        "pickle",
+        "socket",
+        "urllib",
+        "requests",
+        "http",
+        "ftplib",
+        "smtplib",
+        "email",
+        "multiprocessing",
+        "threading",
+        "asyncio",
+        "concurrent",
+        "__import__",
+        "eval",
+        "exec",
+        "compile",
+        "open",
+        "file",
+        "input",
+        "raw_input",
+    },
+    # Whether to show detailed error messages to students
+    "SHOW_DETAILED_ERRORS": True,
+    # Enable test result caching
+    "CACHE_TEST_RESULTS": False,
+    # Maximum number of test cases per task
+    "MAX_TEST_CASES_PER_TASK": 50,
+}
