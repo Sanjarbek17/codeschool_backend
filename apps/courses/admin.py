@@ -1,13 +1,20 @@
 from django.contrib import admin
-from .models import Lessons, Attendance
+from .models import Course, Lessons, Attendance
 
 
-@admin.register(Lessons)
-class LessonsAdmin(admin.ModelAdmin):
-    """Lessons admin configuration."""
+@admin.register(Course)
+class CourseAdmin(admin.ModelAdmin):
+    """Course admin configuration."""
 
-    list_display = ("title", "teacher_names", "get_homework_count", "created_at")
-    list_filter = ("created_at", "updated_at", "teachers")
+    list_display = (
+        "title",
+        "level",
+        "duration_weeks",
+        "lesson_count",
+        "is_active",
+        "created_at",
+    )
+    list_filter = ("level", "is_active", "created_at", "teachers")
     search_fields = (
         "title",
         "description",
@@ -15,10 +22,50 @@ class LessonsAdmin(admin.ModelAdmin):
         "teachers__last_name",
     )
     filter_horizontal = ("teachers",)
-    ordering = ("-created_at",)
+    ordering = ("title",)
 
     fieldsets = (
         ("Basic Information", {"fields": ("title", "description")}),
+        ("Course Details", {"fields": ("level", "duration_weeks", "is_active")}),
+        ("Teachers", {"fields": ("teachers",)}),
+        (
+            "Timestamps",
+            {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},
+        ),
+    )
+    readonly_fields = ("created_at", "updated_at")
+
+    def get_queryset(self, request):
+        """Optimize queryset with prefetch_related."""
+        return super().get_queryset(request).prefetch_related("teachers")
+
+
+@admin.register(Lessons)
+class LessonsAdmin(admin.ModelAdmin):
+    """Lessons admin configuration."""
+
+    list_display = (
+        "title",
+        "course",
+        "order",
+        "teacher_names",
+        "get_homework_count",
+        "created_at",
+    )
+    list_filter = ("created_at", "updated_at", "teachers", "course")
+    search_fields = (
+        "title",
+        "description",
+        "course__title",
+        "teachers__first_name",
+        "teachers__last_name",
+    )
+    filter_horizontal = ("teachers",)
+    ordering = ("course__title", "order", "title")
+
+    fieldsets = (
+        ("Basic Information", {"fields": ("title", "description")}),
+        ("Course & Order", {"fields": ("course", "order")}),
         ("Content", {"fields": ("content", "video_url")}),
         ("Teachers", {"fields": ("teachers",)}),
         (
@@ -27,6 +74,15 @@ class LessonsAdmin(admin.ModelAdmin):
         ),
     )
     readonly_fields = ("created_at", "updated_at")
+
+    def get_queryset(self, request):
+        """Optimize queryset with prefetch_related and select_related."""
+        return (
+            super()
+            .get_queryset(request)
+            .select_related("course")
+            .prefetch_related("teachers")
+        )
 
     def get_homework_count(self, obj):
         """Display homework count in admin list."""

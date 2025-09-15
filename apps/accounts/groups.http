@@ -1,0 +1,202 @@
+### Groups API Testing
+### Base URL: http://localhost:8000
+### Authentication: Token-based
+
+@baseUrl = http://localhost:8000
+@token = 9452db2d6edc004c7e1d2794f1cbbb2e8af9b968
+
+### 1. Get all groups (List View)
+GET {{baseUrl}}/api/groups/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+###
+
+### 2. Create a new group
+POST {{baseUrl}}/api/groups/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+{
+    "name": "Python Programming Group",
+    "teachers": [],
+    "current_course": null,
+    "current_lesson": null
+}
+
+###
+
+### 3. Get a specific group by ID (with all lesson data)
+GET {{baseUrl}}/api/groups/7/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+###
+
+### 4. Update a group with course and lesson
+PUT {{baseUrl}}/api/groups/1/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+{
+    "name": "Advanced Python Programming Group",
+    "teachers": [1],
+    "current_course": 1,
+    "current_lesson": 1
+}
+
+###
+
+### 5. Partially update a group (PATCH)
+PATCH {{baseUrl}}/api/groups/1/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+{
+    "current_lesson": 2,
+    "last_taught_date": "2025-09-15T10:00:00Z"
+}
+
+###
+
+### 6. Get group with course lessons data
+GET {{baseUrl}}/api/groups/1/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+###
+
+### 7. Create group with teachers
+POST {{baseUrl}}/api/groups/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+{
+    "name": "JavaScript Fundamentals Group",
+    "teachers": [1, 2],
+    "current_course": 2
+}
+
+###
+
+### 8. Update group to set current lesson
+PATCH {{baseUrl}}/api/groups/2/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+{
+    "current_lesson": 3
+}
+
+###
+
+### 9. Delete a group
+DELETE {{baseUrl}}/api/groups/2/
+Authorization: Token {{token}}
+
+###
+
+### 10. Test group with invalid data (should fail)
+POST {{baseUrl}}/api/groups/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+{
+    "name": "",
+    "teachers": []
+}
+
+###
+
+### 11. Create minimal group
+POST {{baseUrl}}/api/groups/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+{
+    "name": "Basic Programming Group"
+}
+
+###
+
+### 12. Get group without authentication (should fail)
+GET {{baseUrl}}/api/groups/1/
+Content-Type: application/json
+
+###
+
+### Example response structure for GET /api/groups/1/:
+### {
+###   "id": 1,
+###   "name": "Python Programming Group",
+###   "created_date": "2025-09-15T08:00:00Z",
+###   "updated_at": "2025-09-15T10:30:00Z",
+###   "teachers": [1],
+###   "teachers_data": [
+###     {
+###       "id": 1,
+###       "full_name": "John Doe",
+###       "first_name": "John",
+###       "last_name": "Doe",
+###       "phone_number": "+1234567890"
+###     }
+###   ],
+###   "teacher_count": 1,
+###   "students_data": [
+###     {
+###       "id": 1,
+###       "full_name": "Jane Smith",
+###       "first_name": "Jane",
+###       "last_name": "Smith",
+###       "phone_number": "+0987654321"
+###     }
+###   ],
+###   "student_count": 1,
+###   "lessons_data": [
+###     {
+###       "id": 1,
+###       "title": "Introduction to Python",
+###       "description": "Basic Python concepts",
+###       "video_url": "https://example.com/video1",
+###       "order": 1,
+###       "teacher_names": "John Doe",
+###       "created_at": "2025-09-01T00:00:00Z"
+###     },
+###     {
+###       "id": 2,
+###       "title": "Python Variables and Data Types",
+###       "description": "Understanding variables and data types",
+###       "video_url": "https://example.com/video2",
+###       "order": 2,
+###       "teacher_names": "John Doe",
+###       "created_at": "2025-09-02T00:00:00Z"
+###     }
+###   ],
+###   "current_course": 1,
+###   "current_course_info": {
+###     "id": 1,
+###     "title": "Python Programming Fundamentals",
+###     "level": "beginner",
+###     "duration_weeks": 8
+###   },
+###   "current_lesson": 1,
+###   "current_lesson_info": {
+###     "id": 1,
+###     "title": "Introduction to Python",
+###     "description": "Basic Python concepts",
+###     "order": 1,
+###     "course_title": "Python Programming Fundamentals",
+###     "last_taught": "2025-09-15T10:00:00Z"
+###   },
+###   "last_taught_date": "2025-09-15T10:00:00Z"
+### }
+
+### Notes:
+### - Replace {{token}} with actual authentication token
+### - Replace group IDs (1, 2) with actual group IDs from your database
+### - Replace teacher IDs (1, 2) with actual teacher IDs from your database
+### - Replace course IDs (1, 2) with actual course IDs from your database
+### - Replace lesson IDs (1, 2, 3) with actual lesson IDs from your database
+### - The lessons_data will only show lessons from the current_course
+### - current_lesson_info includes course_title and last_taught information
+### - Groups can be created without courses/lessons and updated later
