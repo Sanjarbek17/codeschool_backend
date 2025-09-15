@@ -12,6 +12,33 @@ from core import settings
 class CustomAutoSchema(SwaggerAutoSchema):
     """Custom schema to override default tagging by app name"""
 
+    def should_filter(self, operation_keys=None):
+        """Override to exclude certain URLs from Swagger documentation"""
+        path = self.path
+
+        # List of URL patterns to exclude from Swagger
+        excluded_patterns = [
+            "/api/homework-progress",  # Exclude homework progress endpoints
+            "/api/task-progress",  # Exclude task progress endpoints
+            "/api/homework-progress/",  # Exclude with trailing slash
+            "/api/task-progress/",  # Exclude with trailing slash
+            # '/admin/',  # Example: exclude admin URLs
+            # '/api/status/',  # Example: exclude status endpoint
+            # '/api/internal/',  # Example: exclude internal APIs
+        ]
+
+        # Debug: Print the path to see what we're filtering
+        print(f"Checking path: {path}")
+
+        # Check if current path should be excluded
+        for pattern in excluded_patterns:
+            if path.startswith(pattern):
+                print(f"Excluding path: {path} (matched pattern: {pattern})")
+                return True
+
+        # Call parent method for default filtering
+        return super().should_filter()
+
     def get_tags(self, operation_keys=None):
         """Override tags to group by functionality instead of app name"""
         path = self.path
@@ -105,6 +132,17 @@ schema_view = get_schema_view(
     public=True,
     permission_classes=(permissions.AllowAny,),
     authentication_classes=[],
+    # You can add URL patterns to exclude here
+    patterns=[
+        path("api/", include("apps.accounts.urls")),
+        path("api/", include("apps.courses.urls")),
+        path("api/", include("apps.assignments.urls")),
+        path("api/", include("apps.progress.urls")),
+        path("api/", include("apps.submissions.urls")),
+        path("api/", include("apps.teacher_mgmt.urls")),
+        path("editor/", include("apps.editor.urls")),
+        # Note: admin URLs are excluded by not including them here
+    ],
 )
 
 urlpatterns = [
