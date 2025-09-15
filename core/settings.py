@@ -192,6 +192,7 @@ SWAGGER_SETTINGS = {
     "DEEP_LINKING": True,
     "SHOW_EXTENSIONS": True,
     "DEFAULT_MODEL_RENDERING": "example",
+    "DEFAULT_AUTO_SCHEMA_CLASS": "core.urls.CustomAutoSchema",
 }
 
 # ReDoc Settings
