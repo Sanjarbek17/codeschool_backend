@@ -63,6 +63,31 @@ class Group(models.Model):
         help_text="Teachers who can teach this group",
     )
 
+    # Current course being taught in this group
+    current_course = models.ForeignKey(
+        "courses.Course",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="current_groups",
+        help_text="The course currently being taught in this group",
+    )
+
+    # Current lesson being taught in this group
+    current_lesson = models.ForeignKey(
+        "courses.Lessons",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="current_groups",
+        help_text="The lesson currently being taught in this group",
+    )
+
+    # Track when the current lesson was last taught
+    last_taught_date = models.DateTimeField(
+        null=True, blank=True, help_text="When the current lesson was last taught"
+    )
+
     # Additional group-specific fields
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -84,6 +109,56 @@ class Group(models.Model):
     def student_count(self):
         """Returns the number of students in this group"""
         return self.students.count()
+
+    @property
+    def current_lesson_info(self):
+        """Returns current lesson information if available"""
+        if self.current_lesson:
+            return {
+                "id": self.current_lesson.id,
+                "title": self.current_lesson.title,
+                "description": self.current_lesson.description,
+                "order": self.current_lesson.order,
+                "course_title": self.current_lesson.course.title,
+                "last_taught": self.last_taught_date,
+            }
+        return None
+
+    @property
+    def current_course_info(self):
+        """Returns current course information if available"""
+        if self.current_course:
+            return {
+                "id": self.current_course.id,
+                "title": self.current_course.title,
+                "level": self.current_course.level,
+                "duration_weeks": self.current_course.duration_weeks,
+            }
+        return None
+
+    def set_current_lesson(self, lesson, taught_date=None):
+        """Set the current lesson and update the last taught date"""
+        from django.utils import timezone
+
+        self.current_lesson = lesson
+        if lesson:
+            self.current_course = lesson.course
+        self.last_taught_date = taught_date or timezone.now()
+        self.save()
+
+    def set_current_course(self, course):
+        """Set the current course"""
+        self.current_course = course
+        # Reset current lesson when changing course
+        self.current_lesson = None
+        self.last_taught_date = None
+        self.save()
+
+    def get_all_lessons(self):
+        """Get all lessons that have been taught in this group"""
+        from apps.courses.models import Lessons
+
+        return Lessons.objects.filter(attendances__group=self).distinct()
 
 
 class Student(models.Model):

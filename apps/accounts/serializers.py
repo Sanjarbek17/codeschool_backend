@@ -247,6 +247,9 @@ class GroupSerializer(serializers.ModelSerializer):
     student_count = serializers.ReadOnlyField()
     teachers_data = serializers.SerializerMethodField()
     students_data = serializers.SerializerMethodField()
+    lessons_data = serializers.SerializerMethodField()
+    current_lesson_info = serializers.ReadOnlyField()
+    current_course_info = serializers.ReadOnlyField()
 
     class Meta:
         model = Group
@@ -260,6 +263,12 @@ class GroupSerializer(serializers.ModelSerializer):
             "teacher_count",
             "students_data",
             "student_count",
+            "lessons_data",
+            "current_course",
+            "current_course_info",
+            "current_lesson",
+            "current_lesson_info",
+            "last_taught_date",
         ]
         read_only_fields = ["created_date", "updated_at"]
 
@@ -289,6 +298,26 @@ class GroupSerializer(serializers.ModelSerializer):
             for student in obj.students.all()
         ]
 
+    def get_lessons_data(self, obj):
+        """Get detailed lessons information for this group by current course."""
+        if obj.current_course:
+            # Get lessons from the current course, ordered by lesson order
+            lessons = obj.current_course.lessons.all().order_by("order")
+
+            return [
+                {
+                    "id": lesson.id,
+                    "title": lesson.title,
+                    "description": lesson.description,
+                    "video_url": lesson.video_url,
+                    "order": lesson.order,
+                    "teacher_names": lesson.teacher_names,
+                    "created_at": lesson.created_at,
+                }
+                for lesson in lessons
+            ]
+        return []
+
 
 class GroupListSerializer(serializers.ModelSerializer):
     """
@@ -310,7 +339,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Group
-        fields = ["name", "teachers"]
+        fields = ["name", "teachers", "current_course", "current_lesson"]
 
     def validate_name(self, value):
         """Validate group name is not empty and unique."""

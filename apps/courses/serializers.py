@@ -1,17 +1,102 @@
 from rest_framework import serializers
-from .models import Lessons, Attendance
+from .models import Course, Lessons, Attendance
 from apps.accounts.serializers import TeacherProfileSerializer
+
+
+class CourseSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Course model.
+    Includes teacher information and lesson count.
+    """
+
+    teacher_names = serializers.ReadOnlyField()
+    lesson_count = serializers.ReadOnlyField()
+    teachers_data = serializers.SerializerMethodField()
+    lessons_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Course
+        fields = [
+            "id",
+            "title",
+            "description",
+            "duration_weeks",
+            "level",
+            "is_active",
+            "teachers",
+            "teachers_data",
+            "teacher_names",
+            "lesson_count",
+            "lessons_data",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "created_at",
+            "updated_at",
+            "teacher_names",
+            "lesson_count",
+        ]
+
+    def get_teachers_data(self, obj):
+        """Get detailed teacher information."""
+        return [
+            {
+                "id": teacher.id,
+                "full_name": teacher.full_name,
+                "first_name": teacher.first_name,
+                "last_name": teacher.last_name,
+                "phone_number": teacher.phone_number,
+            }
+            for teacher in obj.teachers.all()
+        ]
+
+    def get_lessons_data(self, obj):
+        """Get basic lesson information for this course."""
+        return [
+            {
+                "id": lesson.id,
+                "title": lesson.title,
+                "order": lesson.order,
+                "video_url": lesson.video_url,
+            }
+            for lesson in obj.lessons.all().order_by("order")
+        ]
+
+
+class CourseListSerializer(serializers.ModelSerializer):
+    """
+    Simplified serializer for course list views.
+    """
+
+    teacher_names = serializers.ReadOnlyField()
+    lesson_count = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Course
+        fields = [
+            "id",
+            "title",
+            "description",
+            "duration_weeks",
+            "level",
+            "is_active",
+            "teacher_names",
+            "lesson_count",
+            "created_at",
+        ]
 
 
 class LessonSerializer(serializers.ModelSerializer):
     """
     Serializer for Lessons model.
-    Includes teacher information and homework count.
+    Includes teacher information, course information, and homework count.
     """
 
     teacher_names = serializers.ReadOnlyField()
     homework_count = serializers.SerializerMethodField()
     teachers_data = serializers.SerializerMethodField()
+    course_data = serializers.SerializerMethodField()
 
     class Meta:
         model = Lessons
@@ -21,6 +106,9 @@ class LessonSerializer(serializers.ModelSerializer):
             "description",
             "video_url",
             "content",
+            "course",
+            "course_data",
+            "order",
             "teachers",
             "teachers_data",
             "teacher_names",
@@ -38,6 +126,17 @@ class LessonSerializer(serializers.ModelSerializer):
     def get_homework_count(self, obj):
         """Get the number of homework assignments for this lesson."""
         return obj.get_homework_count()
+
+    def get_course_data(self, obj):
+        """Get basic course information."""
+        if obj.course:
+            return {
+                "id": obj.course.id,
+                "title": obj.course.title,
+                "level": obj.course.level,
+                "duration_weeks": obj.course.duration_weeks,
+            }
+        return None
 
     def get_teachers_data(self, obj):
         """Get detailed teacher information."""
