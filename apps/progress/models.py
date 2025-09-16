@@ -65,6 +65,14 @@ class TaskProgress(models.Model):
     TaskProgress model tracking student progress on individual tasks.
     Tracks test case performance and completion status.
     """
+    homework_progress = models.ForeignKey(
+        'progress.HomeworkProgress',
+        on_delete=models.CASCADE,
+        related_name='task_progresses',
+        null=True,
+        blank=True,
+        help_text="Reference to the parent HomeworkProgress record (nullable for migration)"
+    )
     task = models.ForeignKey(
         'assignments.Task',
         on_delete=models.CASCADE,
