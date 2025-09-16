@@ -398,6 +398,13 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     ViewSet for managing attendance records.
     Teachers can create and update attendance for their groups.
     """
+    
+    def perform_update(self, serializer):
+        """Set the teacher to current user if they are a teacher on update."""
+        if hasattr(self.request.user, "teacher_profile"):
+            serializer.save(teacher=self.request.user.teacher_profile)
+        else:
+            serializer.save()
 
     queryset = Attendance.objects.all().select_related(
         "student__user", "lesson", "group", "teacher__user"

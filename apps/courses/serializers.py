@@ -381,15 +381,19 @@ class AttendanceCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Attendance
-        fields = ["student", "lesson", "group", "teacher", "status", "date", "notes"]
+        fields = ["student", "lesson", "group", "status", "date", "notes", "teacher"]
+        read_only_fields = ["teacher"]
 
     def validate(self, data):
-        """Validate attendance data."""
+        """
+        Validate attendance data. Teacher is set from authenticated user, not input.
+        """
         student = data.get("student")
         group = data.get("group")
-        teacher = data.get("teacher")
         lesson = data.get("lesson")
         date = data.get("date")
+        request = self.context.get("request")
+        teacher = getattr(getattr(request, "user", None), "teacher_profile", None) if request else None
 
         # Check if student belongs to group
         if student and group and student not in group.students.all():
