@@ -160,12 +160,15 @@ class HomeworkSubmissionViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def create(self, request, *args, **kwargs):
-        """Create a new submission with automatic testing."""
+        """Create a new submission with automatic testing and update progress."""
         if not hasattr(request.user, "student_profile"):
             return Response(
                 {"error": "Only students can create submissions"},
                 status=status.HTTP_403_FORBIDDEN,
             )
+
+        from apps.progress.models import HomeworkProgress, TaskProgress
+        from django.utils import timezone
 
         # Create the submission first
         serializer = self.get_serializer(data=request.data)
@@ -183,6 +186,64 @@ class HomeworkSubmissionViewSet(viewsets.ModelViewSet):
 
                 # Refresh submission from database to get updated values
                 submission.refresh_from_db()
+
+                # --- Progress Tracking Logic ---
+                student = submission.student
+                task = submission.task
+                homework = task.homework
+
+                # HomeworkProgress
+                homework_progress, _ = HomeworkProgress.objects.get_or_create(
+                    homework=homework,
+                    student=student,
+                    defaults={
+                        "total_tasks": homework.tasks.count(),
+                        "solved_tasks": 0,
+                        "last_attempt_at": timezone.now(),
+                    },
+                )
+                # TaskProgress
+                task_progress, _ = TaskProgress.objects.get_or_create(
+                    task=task,
+                    student=student,
+                    defaults={
+                        "homework_progress": homework_progress,
+                        "total_tests": test_results.total_tests,
+                        "best_passed_tests": test_results.passed_tests,
+                        "last_attempt_at": timezone.now(),
+                        "last_submission": submission,
+                    },
+                )
+                # Update TaskProgress if improved
+                updated = False
+                if test_results.passed_tests > task_progress.best_passed_tests:
+                    task_progress.best_passed_tests = test_results.passed_tests
+                    updated = True
+                if test_results.total_tests != task_progress.total_tests:
+                    task_progress.total_tests = test_results.total_tests
+                    updated = True
+                task_progress.last_attempt_at = timezone.now()
+                task_progress.last_submission = submission
+                # Mark as solved if all tests passed
+                if test_results.passed_tests >= test_results.total_tests and test_results.total_tests > 0:
+                    if not task_progress.is_solved:
+                        task_progress.is_solved = True
+                        updated = True
+                if updated:
+                    task_progress.save()
+                else:
+                    # Always update last_attempt_at and last_submission
+                    task_progress.save(update_fields=["last_attempt_at", "last_submission"])
+
+                # Update HomeworkProgress solved_tasks and last_attempt_at
+                solved_count = TaskProgress.objects.filter(
+                    homework_progress=homework_progress, is_solved=True
+                ).count()
+                homework_progress.solved_tasks = solved_count
+                homework_progress.last_attempt_at = timezone.now()
+                homework_progress.update_completion_status()
+
+                # --- End Progress Tracking ---
 
                 # Return detailed response with test results
                 response_data = HomeworkSubmissionSerializer(submission).data
