@@ -4,6 +4,7 @@ from . import views
 
 router = DefaultRouter()
 router.register(r"payments", views.PaymentViewSet)
+router.register(r"payment-statuses", views.StudentPaymentStatusViewSet)
 router.register(r"students", views.StudentManagementViewSet)
 router.register(r"teachers", views.TeacherManagementViewSet)
 router.register(r"groups", views.GroupManagementViewSet)

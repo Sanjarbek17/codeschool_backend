@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Payment
+from .models import Payment, StudentPaymentStatus
 from apps.accounts.models import Teacher, Student, Group
 from apps.courses.models import Course, Lessons
 
@@ -16,6 +16,10 @@ class PaymentSerializer(serializers.ModelSerializer):
     payment_period = serializers.SerializerMethodField()
     is_overdue = serializers.SerializerMethodField()
     days_overdue = serializers.SerializerMethodField()
+    remaining_amount = serializers.SerializerMethodField()
+    payment_percentage = serializers.SerializerMethodField()
+    is_fully_paid = serializers.SerializerMethodField()
+    is_partially_paid = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -28,6 +32,11 @@ class PaymentSerializer(serializers.ModelSerializer):
             "course",
             "course_name",
             "amount",
+            "paid_amount",
+            "remaining_amount",
+            "payment_percentage",
+            "is_fully_paid",
+            "is_partially_paid",
             "due_date",
             "paid_date",
             "month",
@@ -42,7 +51,16 @@ class PaymentSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["created_at", "updated_at", "is_overdue", "days_overdue"]
+        read_only_fields = [
+            "created_at",
+            "updated_at",
+            "is_overdue",
+            "days_overdue",
+            "remaining_amount",
+            "payment_percentage",
+            "is_fully_paid",
+            "is_partially_paid",
+        ]
 
     def get_student_name(self, obj):
         return obj.student.get_full_name() or obj.student.username
@@ -61,6 +79,36 @@ class PaymentSerializer(serializers.ModelSerializer):
 
     def get_days_overdue(self, obj):
         return obj.days_overdue
+
+    def get_remaining_amount(self, obj):
+        return obj.remaining_amount
+
+    def get_payment_percentage(self, obj):
+        return obj.payment_percentage
+
+    def get_is_fully_paid(self, obj):
+        return obj.is_fully_paid
+
+    def get_is_partially_paid(self, obj):
+        return obj.is_partially_paid
+
+
+class PartialPaymentSerializer(serializers.Serializer):
+    """Serializer for adding partial payments"""
+
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0.01)
+    payment_method = serializers.CharField(
+        max_length=50, required=False, allow_blank=True
+    )
+    notes = serializers.CharField(required=False, allow_blank=True)
+
+    def validate_amount(self, value):
+        if hasattr(self, "instance") and self.instance:
+            if value > self.instance.remaining_amount:
+                raise serializers.ValidationError(
+                    f"Amount exceeds remaining balance of {self.instance.remaining_amount}"
+                )
+        return value
 
 
 class PaymentCreateSerializer(serializers.ModelSerializer):
@@ -102,12 +150,57 @@ class PaymentUpdateSerializer(serializers.ModelSerializer):
         model = Payment
         fields = [
             "amount",
+            "paid_amount",
             "due_date",
             "status",
             "notes",
             "payment_method",
             "processed_by",
         ]
+
+
+class StudentPaymentStatusSerializer(serializers.ModelSerializer):
+    """Serializer for StudentPaymentStatus model"""
+
+    student_name = serializers.SerializerMethodField()
+    unpaid_months = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StudentPaymentStatus
+        fields = [
+            "id",
+            "student",
+            "student_name",
+            "status",
+            "consecutive_unpaid_months",
+            "unpaid_months",
+            "total_debt",
+            "last_payment_date",
+            "suspension_date",
+            "warning_sent_date",
+            "notes",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["created_at", "updated_at"]
+
+    def get_student_name(self, obj):
+        return obj.student.get_full_name() or obj.student.username
+
+    def get_unpaid_months(self, obj):
+        return Payment.get_student_unpaid_months(obj.student)
+
+
+class StudentAtRiskSerializer(serializers.Serializer):
+    """Serializer for students at risk of suspension"""
+
+    student_id = serializers.IntegerField()
+    student_name = serializers.CharField()
+    unpaid_months = serializers.IntegerField()
+    total_debt = serializers.DecimalField(max_digits=10, decimal_places=2)
+    last_payment_date = serializers.DateField(allow_null=True)
+    status = serializers.CharField()
+    groups = serializers.ListField(child=serializers.CharField())
 
 
 class StudentPaymentSummarySerializer(serializers.Serializer):

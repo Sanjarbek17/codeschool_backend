@@ -187,6 +187,7 @@ class PaymentModelTest(TestCase):
             group=self.group,
             course=self.course,
             amount=Decimal("100.00"),
+            paid_amount=Decimal("100.00"),  # Set paid_amount for paid status
             due_date=date.today() + timedelta(days=30),
             month=1,
             year=2025,

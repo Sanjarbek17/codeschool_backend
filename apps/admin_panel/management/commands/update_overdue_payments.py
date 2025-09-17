@@ -27,9 +27,9 @@ class Command(BaseCommand):
             )
         )
 
-        # Find pending payments that are past due
+        # Find pending and partially paid payments that are past due
         overdue_payments = Payment.objects.filter(
-            status="pending", due_date__lt=today
+            status__in=["pending", "partially_paid"], due_date__lt=today
         ).select_related("student", "group")
 
         if not overdue_payments.exists():

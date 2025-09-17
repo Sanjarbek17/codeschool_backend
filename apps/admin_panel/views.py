@@ -8,12 +8,15 @@ from django.utils import timezone
 from datetime import date, datetime
 from decimal import Decimal
 
-from .models import Payment
+from .models import Payment, StudentPaymentStatus
 from .serializers import (
     PaymentSerializer,
     PaymentCreateSerializer,
     PaymentUpdateSerializer,
+    PartialPaymentSerializer,
     StudentPaymentSummarySerializer,
+    StudentPaymentStatusSerializer,
+    StudentAtRiskSerializer,
     StudentManagementSerializer,
     TeacherManagementSerializer,
     GroupManagementSerializer,
@@ -97,6 +100,49 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(payment)
         return Response(serializer.data)
+
+    @action(detail=True, methods=["post"])
+    def add_partial_payment(self, request, pk=None):
+        """Add a partial payment to an existing payment record"""
+        payment = self.get_object()
+
+        if payment.status == "paid":
+            return Response(
+                {"error": "Payment is already fully paid"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = PartialPaymentSerializer(data=request.data, instance=payment)
+        if serializer.is_valid():
+            try:
+                amount = serializer.validated_data["amount"]
+                payment_method = serializer.validated_data.get("payment_method", "")
+                notes = serializer.validated_data.get("notes", "")
+
+                remaining = payment.add_payment(
+                    amount=amount,
+                    payment_method=payment_method,
+                    processed_by=request.user,
+                    notes=notes,
+                )
+
+                response_data = PaymentSerializer(payment).data
+                response_data["remaining_amount"] = remaining
+                response_data["message"] = (
+                    f"Partial payment of {amount} added successfully"
+                )
+
+                if payment.status == "paid":
+                    response_data["message"] = (
+                        f"Payment completed with final amount of {amount}"
+                    )
+
+                return Response(response_data)
+
+            except ValueError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=["post"])
     def create_monthly_payments(self, request):
@@ -199,6 +245,117 @@ class PaymentViewSet(viewsets.ModelViewSet):
                     "pending_payments": current_month_pending,
                     "overdue_payments": current_month_overdue,
                 },
+            }
+        )
+
+    @action(detail=False, methods=["get"])
+    def students_at_risk(self, request):
+        """Get students who haven't paid for multiple months"""
+        min_months = int(request.query_params.get("min_months", 2))
+
+        students_at_risk = Payment.get_students_with_multiple_unpaid_months(min_months)
+
+        # Format data for serializer
+        formatted_data = []
+        for item in students_at_risk:
+            student = item["student"]
+
+            # Get student's groups
+            student_profile = getattr(student, "student_profile", None)
+            groups = []
+            if student_profile:
+                groups = [group.name for group in student_profile.groups.all()]
+
+            # Get last payment date
+            last_payment = (
+                Payment.objects.filter(student=student, status="paid")
+                .order_by("-paid_date")
+                .first()
+            )
+
+            formatted_data.append(
+                {
+                    "student_id": student.id,
+                    "student_name": student.get_full_name() or student.username,
+                    "unpaid_months": item["unpaid_months"],
+                    "total_debt": item["total_debt"],
+                    "last_payment_date": (
+                        last_payment.paid_date.date() if last_payment else None
+                    ),
+                    "status": "At Risk",
+                    "groups": groups,
+                }
+            )
+
+        serializer = StudentAtRiskSerializer(formatted_data, many=True)
+        return Response(
+            {
+                "count": len(formatted_data),
+                "students": serializer.data,
+                "summary": {
+                    "total_at_risk": len(formatted_data),
+                    "total_debt": sum(item["total_debt"] for item in students_at_risk),
+                    "avg_unpaid_months": (
+                        sum(item["unpaid_months"] for item in students_at_risk)
+                        / len(students_at_risk)
+                        if students_at_risk
+                        else 0
+                    ),
+                },
+            }
+        )
+
+    @action(detail=False, methods=["get"])
+    def suspension_candidates(self, request):
+        """Get students who should be suspended for non-payment"""
+        candidates = Payment.get_suspension_candidates()
+
+        formatted_data = []
+        for item in candidates:
+            student = item["student"]
+            student_profile = getattr(student, "student_profile", None)
+            groups = []
+            if student_profile:
+                groups = [group.name for group in student_profile.groups.all()]
+
+            last_payment = (
+                Payment.objects.filter(student=student, status="paid")
+                .order_by("-paid_date")
+                .first()
+            )
+
+            formatted_data.append(
+                {
+                    "student_id": student.id,
+                    "student_name": student.get_full_name() or student.username,
+                    "unpaid_months": item["unpaid_months"],
+                    "total_debt": item["total_debt"],
+                    "last_payment_date": (
+                        last_payment.paid_date.date() if last_payment else None
+                    ),
+                    "status": "Suspension Candidate",
+                    "groups": groups,
+                }
+            )
+
+        serializer = StudentAtRiskSerializer(formatted_data, many=True)
+        return Response(
+            {
+                "count": len(formatted_data),
+                "candidates": serializer.data,
+                "message": f"{len(formatted_data)} students should be suspended for non-payment",
+            }
+        )
+
+    @action(detail=False, methods=["post"])
+    def update_all_payment_statuses(self, request):
+        """Update payment status for all students"""
+        updated_count = StudentPaymentStatus.update_all_statuses()
+
+        return Response(
+            {
+                "message": f"Updated payment status for {updated_count} students",
+                "updated_count": updated_count,
             }
         )
 
@@ -432,3 +589,115 @@ class CourseManagementViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(is_active=is_active.lower() == "true")
 
         return queryset.order_by("title")
+
+
+class StudentPaymentStatusViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing student payment statuses and restrictions.
+    """
+
+    queryset = StudentPaymentStatus.objects.select_related("student").all()
+    serializer_class = StudentPaymentStatusSerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        # Filter parameters
+        status_filter = self.request.query_params.get("status")
+        min_debt = self.request.query_params.get("min_debt")
+        min_unpaid_months = self.request.query_params.get("min_unpaid_months")
+
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+
+        if min_debt:
+            try:
+                min_debt = Decimal(str(min_debt))
+                queryset = queryset.filter(total_debt__gte=min_debt)
+            except (ValueError, TypeError):
+                pass
+
+        if min_unpaid_months:
+            try:
+                min_unpaid_months = int(min_unpaid_months)
+                queryset = queryset.filter(
+                    consecutive_unpaid_months__gte=min_unpaid_months
+                )
+            except (ValueError, TypeError):
+                pass
+
+        return queryset.order_by("-consecutive_unpaid_months", "-total_debt")
+
+    @action(detail=False, methods=["post"])
+    def update_all_statuses(self, request):
+        """Update payment status for all students"""
+        updated_count = StudentPaymentStatus.update_all_statuses()
+
+        return Response(
+            {
+                "message": f"Updated payment status for {updated_count} students",
+                "updated_count": updated_count,
+            }
+        )
+
+    @action(detail=True, methods=["post"])
+    def send_warning(self, request, pk=None):
+        """Send payment warning to student"""
+        payment_status = self.get_object()
+
+        # Here you would integrate with your notification system
+        # For now, just update the warning_sent_date
+        payment_status.warning_sent_date = timezone.now().date()
+        payment_status.save()
+
+        return Response(
+            {
+                "message": f"Warning sent to {payment_status.student.get_full_name()}",
+                "warning_sent_date": payment_status.warning_sent_date,
+            }
+        )
+
+    @action(detail=True, methods=["post"])
+    def suspend_student(self, request, pk=None):
+        """Suspend student for non-payment"""
+        payment_status = self.get_object()
+
+        if payment_status.consecutive_unpaid_months >= 3:
+            payment_status.status = "suspended"
+            payment_status.suspension_date = timezone.now().date()
+            payment_status.save()
+
+            return Response(
+                {
+                    "message": f"Student {payment_status.student.get_full_name()} suspended for non-payment",
+                    "suspension_date": payment_status.suspension_date,
+                }
+            )
+        else:
+            return Response(
+                {"error": "Student must have 3+ unpaid months to be suspended"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    @action(detail=True, methods=["post"])
+    def reactivate_student(self, request, pk=None):
+        """Reactivate suspended student"""
+        payment_status = self.get_object()
+
+        if payment_status.status in ["suspended", "warning"]:
+            payment_status.status = "active"
+            payment_status.suspension_date = None
+            payment_status.warning_sent_date = None
+            payment_status.save()
+
+            return Response(
+                {
+                    "message": f"Student {payment_status.student.get_full_name()} reactivated"
+                }
+            )
+        else:
+            return Response(
+                {"error": "Student is not suspended or warned"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
