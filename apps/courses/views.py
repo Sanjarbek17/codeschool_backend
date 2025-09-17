@@ -7,6 +7,10 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from .models import Lessons, Attendance
 from apps.accounts.permissions import IsAssignedTeacherOrAdmin
+from apps.admin_panel.permissions import (
+    IsActiveStudentOrTeacherOrAdmin,
+    IsActiveStudentForContentAccess,
+)
 from .serializers import (
     LessonSerializer,
     LessonListSerializer,
@@ -22,10 +26,11 @@ class LessonViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing lessons.
     Provides CRUD operations with different serializers for different actions.
+    Only allows access to students with active payment status.
     """
 
     queryset = Lessons.objects.all().prefetch_related("teachers", "homework_set")
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsActiveStudentForContentAccess]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["title", "description", "content"]
     ordering_fields = ["created_at", "updated_at", "title"]
@@ -45,12 +50,12 @@ class LessonViewSet(viewsets.ModelViewSet):
         """
         Set permissions based on action.
         Teachers can create/update/delete lessons.
-        Students can only view lessons.
+        Students can only view lessons if they have active payment status.
         """
         if self.action in ["create", "update", "partial_update", "destroy"]:
-            permission_classes = [permissions.IsAuthenticated, IsAssignedTeacherOrAdmin]
+            permission_classes = [IsAssignedTeacherOrAdmin]
         else:
-            permission_classes = [permissions.IsAuthenticated]
+            permission_classes = [IsActiveStudentForContentAccess]
 
         return [permission() for permission in permission_classes]
 
@@ -398,7 +403,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     ViewSet for managing attendance records.
     Teachers can create and update attendance for their groups.
     """
-    
+
     def perform_update(self, serializer):
         """Set the teacher to current user if they are a teacher on update."""
         if hasattr(self.request.user, "teacher_profile"):
@@ -409,7 +414,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     queryset = Attendance.objects.all().select_related(
         "student__user", "lesson", "group", "teacher__user"
     )
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsActiveStudentOrTeacherOrAdmin]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = [
         "student__first_name",

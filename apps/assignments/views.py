@@ -6,6 +6,10 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from .models import Homework, Task
 from apps.accounts.permissions import IsAssignedTeacherOrAdmin
+from apps.admin_panel.permissions import (
+    CanAccessHomework,
+    IsActiveStudentOrTeacherOrAdmin,
+)
 from .serializers import (
     HomeworkSerializer,
     HomeworkListSerializer,
@@ -21,6 +25,7 @@ class HomeworkViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing homework assignments.
     Provides CRUD operations with different serializers for different actions.
+    Only allows access to students with active payment status.
     """
 
     queryset = (
@@ -28,7 +33,7 @@ class HomeworkViewSet(viewsets.ModelViewSet):
         .select_related("lesson")
         .prefetch_related("lesson__teachers", "tasks")
     )
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [CanAccessHomework]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["title", "description", "lesson__title"]
     ordering_fields = ["created_at", "updated_at", "title"]
@@ -48,12 +53,12 @@ class HomeworkViewSet(viewsets.ModelViewSet):
         """
         Set permissions based on action.
         Teachers can create/update/delete homework for assigned lessons.
-        Students can only view homework.
+        Students can only view homework if they have active payment status.
         """
         if self.action in ["create", "update", "partial_update", "destroy"]:
-            permission_classes = [permissions.IsAuthenticated, IsAssignedTeacherOrAdmin]
+            permission_classes = [IsAssignedTeacherOrAdmin]
         else:
-            permission_classes = [permissions.IsAuthenticated]
+            permission_classes = [CanAccessHomework]
 
         return [permission() for permission in permission_classes]
 
@@ -394,7 +399,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         .select_related("homework__lesson")
         .prefetch_related("homework__lesson__teachers")
     )
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [CanAccessHomework]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["title", "description", "homework__title"]
     ordering_fields = ["created_at", "updated_at", "title"]
@@ -412,12 +417,12 @@ class TaskViewSet(viewsets.ModelViewSet):
         """
         Set permissions based on action.
         Teachers can create/update/delete tasks for assigned lessons.
-        Students can only view tasks.
+        Students can only view tasks if they have active payment status.
         """
         if self.action in ["create", "update", "partial_update", "destroy"]:
-            permission_classes = [permissions.IsAuthenticated, IsAssignedTeacherOrAdmin]
+            permission_classes = [IsAssignedTeacherOrAdmin]
         else:
-            permission_classes = [permissions.IsAuthenticated]
+            permission_classes = [CanAccessHomework]
 
         return [permission() for permission in permission_classes]
 
