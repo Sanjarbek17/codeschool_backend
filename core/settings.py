@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "apps.submissions",
     "apps.editor",
     "apps.teacher_mgmt",  # Teacher management app
+    "apps.admin_panel",  # Custom admin panel
 ]
 
 MIDDLEWARE = [

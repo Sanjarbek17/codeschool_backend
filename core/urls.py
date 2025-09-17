@@ -79,6 +79,8 @@ class CustomAutoSchema(SwaggerAutoSchema):
             or "teacher" in path
         ):
             return ["Teacher Management"]
+        elif path.startswith("/api/admin-panel"):
+            return ["Admin Panel"]
         elif path.startswith("/editor/execute"):
             return ["Code Editor"]
         elif path.startswith("/editor/test"):
@@ -120,10 +122,12 @@ schema_view = get_schema_view(
         - **Code Editor**: Code execution functionality
         - **Code Testing**: Code testing and validation
         - **Teacher Management**: Teacher-specific operations
+        - **Admin Panel**: Administrative panel for managing payments, students, teachers, groups, and courses
         
         ### User Types
         - **Teachers**: Can create courses, assignments, and manage students
         - **Students**: Can enroll in courses, submit assignments, and track progress
+        - **Admins**: Can manage all aspects of the system including payments and user management
         """,
         terms_of_service="https://www.example.com/terms/",
         contact=openapi.Contact(email="support@codeschool.com"),
@@ -140,6 +144,7 @@ schema_view = get_schema_view(
         path("api/", include("apps.progress.urls")),
         path("api/", include("apps.submissions.urls")),
         path("api/", include("apps.teacher_mgmt.urls")),
+        path("api/admin-panel/", include("apps.admin_panel.urls")),
         path("editor/", include("apps.editor.urls")),
         # Note: admin URLs are excluded by not including them here
     ],
@@ -172,6 +177,11 @@ urlpatterns = [
     path(
         "api/",
         include(("apps.teacher_mgmt.urls", "teacher_mgmt"), namespace="teacher_mgmt"),
+    ),
+    # Admin Panel endpoints
+    path(
+        "api/admin-panel/",
+        include(("apps.admin_panel.urls", "admin_panel"), namespace="admin_panel"),
     ),
     # Editor endpoints
     path("editor/", include(("apps.editor.urls", "editor"), namespace="editor")),
