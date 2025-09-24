@@ -15,4 +15,6 @@ urlpatterns = [
     ),
     # Teacher Students Management
     path("students/", views.TeacherStudentsView.as_view(), name="teacher-students"),
+    # Teacher Schedule Management
+    path("schedule/", views.TeacherScheduleView.as_view(), name="teacher-schedule"),
 ]
