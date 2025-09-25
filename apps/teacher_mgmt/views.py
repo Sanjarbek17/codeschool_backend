@@ -82,9 +82,10 @@ class TeacherDashboardView(APIView):
         try:
             teacher = request.user.teacher_profile
 
-            # Get teacher's groups
+            # Get teacher's groups with annotations
             teacher_groups = teacher.groups.all().annotate(
-                student_count=Count("students"), teacher_count=Count("teachers")
+                annotated_student_count=Count("students"),
+                annotated_teacher_count=Count("teachers"),
             )
 
             # Get all students from teacher's groups
@@ -93,6 +94,14 @@ class TeacherDashboardView(APIView):
                 .distinct()
                 .select_related("user")
             )
+
+            # Serialize the groups data properly
+            groups_data = TeacherGroupSerializer(teacher_groups, many=True).data
+
+            # Serialize the recent students data
+            recent_students_data = StudentBasicSerializer(
+                all_students.order_by("-created_at")[:5], many=True
+            ).data
 
             # Prepare dashboard data
             dashboard_data = {
@@ -105,14 +114,12 @@ class TeacherDashboardView(APIView):
                 },
                 "total_groups": teacher_groups.count(),
                 "total_students": all_students.count(),
-                "groups": TeacherGroupSerializer(teacher_groups, many=True).data,
-                "recent_students": StudentBasicSerializer(
-                    all_students.order_by("-created_at")[:5], many=True
-                ).data,
+                "groups": groups_data,
+                "recent_students": recent_students_data,
             }
 
-            serializer = TeacherDashboardSerializer(dashboard_data)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            # Return the data directly without re-serializing
+            return Response(dashboard_data, status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response(
@@ -227,7 +234,10 @@ class TeacherGroupsView(ListAPIView):
         teacher = self.request.user.teacher_profile
         return (
             teacher.groups.all()
-            .annotate(student_count=Count("students"), teacher_count=Count("teachers"))
+            .annotate(
+                annotated_student_count=Count("students"),
+                annotated_teacher_count=Count("teachers"),
+            )
             .order_by("name")
         )
 

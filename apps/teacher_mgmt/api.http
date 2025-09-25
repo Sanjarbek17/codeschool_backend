@@ -1,0 +1,23 @@
+### Teacher Dashboard API Test
+
+### Variables
+@baseUrl = http://localhost:8000
+@teacherToken = 9452db2d6edc004c7e1d2794f1cbbb2e8af9b968
+
+### 1. Login as Teacher (Get authentication token)
+POST {{baseUrl}}/api/login/
+Content-Type: application/json
+
+{
+  "username": "teacher_1",
+  "password": "password123"
+}
+
+> {%
+  client.global.set("teacherToken", response.body.token);
+%}
+
+### 2. Teacher Dashboard - Get Summary Data
+GET {{baseUrl}}/api/dashboard/
+Authorization: Token {{teacherToken}}
+Content-Type: application/json

@@ -5,12 +5,20 @@ from apps.accounts.models import Teacher, Student, Group, User, Schedule, Schedu
 class TeacherGroupSerializer(serializers.ModelSerializer):
     """Serializer for groups that a teacher teaches"""
 
-    student_count = serializers.ReadOnlyField()
-    teacher_count = serializers.ReadOnlyField()
+    student_count = serializers.SerializerMethodField()
+    teacher_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
         fields = ["id", "name", "created_date", "student_count", "teacher_count"]
+
+    def get_student_count(self, obj):
+        """Get student count from annotation or calculate if not annotated"""
+        return getattr(obj, "annotated_student_count", obj.student_count)
+
+    def get_teacher_count(self, obj):
+        """Get teacher count from annotation or calculate if not annotated"""
+        return getattr(obj, "annotated_teacher_count", obj.teacher_count)
 
 
 class StudentBasicSerializer(serializers.ModelSerializer):
@@ -39,11 +47,15 @@ class TeacherGroupDetailSerializer(serializers.ModelSerializer):
     """Detailed group information including students"""
 
     students = StudentBasicSerializer(many=True, read_only=True)
-    student_count = serializers.ReadOnlyField()
+    student_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
         fields = ["id", "name", "created_date", "students", "student_count"]
+
+    def get_student_count(self, obj):
+        """Get student count from annotation or calculate if not annotated"""
+        return getattr(obj, "annotated_student_count", obj.student_count)
 
 
 class TeacherDashboardSerializer(serializers.Serializer):

@@ -290,17 +290,27 @@ class LessonViewSet(viewsets.ModelViewSet):
             )
 
     @swagger_auto_schema(
-        operation_description="Get lessons assigned to the current teacher",
+        operation_description="Get lessons for the current user. For teachers: Returns lessons they are assigned to teach. For students: Returns lessons from their groups.",
         operation_summary="Get My Lessons",
         tags=["Courses"],
         responses={
             200: openapi.Response(
-                description="Teacher's lessons retrieved successfully",
+                description="User's lessons retrieved successfully",
                 examples={
                     "application/json": {
-                        "teacher": "John Doe",
-                        "lesson_count": 5,
-                        "lessons": [],
+                        "teacher_example": {
+                            "user_type": "teacher",
+                            "user_name": "John Doe",
+                            "lesson_count": 5,
+                            "lessons": [],
+                        },
+                        "student_example": {
+                            "user_type": "student",
+                            "user_name": "Jane Smith",
+                            "groups": ["Group A", "Group B"],
+                            "lesson_count": 3,
+                            "lessons": [],
+                        },
                     }
                 },
             )
@@ -309,25 +319,51 @@ class LessonViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def my_lessons(self, request):
         """
-        Get lessons assigned to the current teacher.
-        Only available for teacher users.
+        Get lessons for the current user.
+        For teachers: Returns lessons they are assigned to teach.
+        For students: Returns lessons from their groups.
         """
-        if not hasattr(request.user, "teacher_profile"):
+        user = request.user
+
+        # Handle teacher access
+        if hasattr(user, "teacher_profile"):
+            lessons = self.queryset.filter(teachers=user.teacher_profile)
+            serializer = LessonListSerializer(lessons, many=True)
+
             return Response(
-                {"error": "Only teachers can access this endpoint"},
-                status=status.HTTP_403_FORBIDDEN,
+                {
+                    "user_type": "teacher",
+                    "user_name": user.teacher_profile.full_name,
+                    "lesson_count": lessons.count(),
+                    "lessons": serializer.data,
+                }
             )
 
-        lessons = self.queryset.filter(teachers=request.user.teacher_profile)
-        serializer = LessonListSerializer(lessons, many=True)
+        # Handle student access
+        elif hasattr(user, "student_profile"):
+            # Get lessons through the student's groups
+            student_groups = user.student_profile.groups.all()
+            lessons = self.queryset.filter(
+                course__current_groups__in=student_groups
+            ).distinct()
+            serializer = LessonListSerializer(lessons, many=True)
 
-        return Response(
-            {
-                "teacher": request.user.teacher_profile.full_name,
-                "lesson_count": lessons.count(),
-                "lessons": serializer.data,
-            }
-        )
+            return Response(
+                {
+                    "user_type": "student",
+                    "user_name": user.student_profile.full_name,
+                    "groups": [group.name for group in student_groups],
+                    "lesson_count": lessons.count(),
+                    "lessons": serializer.data,
+                }
+            )
+
+        # Handle users who are neither teachers nor students
+        else:
+            return Response(
+                {"error": "Only teachers and students can access this endpoint"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
     @swagger_auto_schema(
         operation_description="Advanced search for lessons with optional filtering",
