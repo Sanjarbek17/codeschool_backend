@@ -63,14 +63,14 @@ class Command(BaseCommand):
                 },
                 {
                     "test_code": "assert factorial(0) == 1",
-                    "input_data": "0", 
+                    "input_data": "0",
                     "expected_output": "1",
                     "hidden": False,
                 },
                 {
                     "test_code": "assert factorial(1) == 1",
                     "input_data": "1",
-                    "expected_output": "1", 
+                    "expected_output": "1",
                     "hidden": True,
                 },
                 {
@@ -121,7 +121,7 @@ class Command(BaseCommand):
                 },
                 {
                     "test_code": "assert two_sum([3,3], 6) == [0,1]",
-                    "input_data": "[3,3], 6", 
+                    "input_data": "[3,3], 6",
                     "expected_output": "[0,1]",
                     "hidden": True,
                 },
@@ -162,7 +162,7 @@ class Command(BaseCommand):
                 {
                     "test_code": "assert is_palindrome('hello') == False",
                     "input_data": "hello",
-                    "expected_output": "False", 
+                    "expected_output": "False",
                     "hidden": False,
                 },
                 {
@@ -317,7 +317,7 @@ class Command(BaseCommand):
                 if problem_name in task.title:
                     matching_tests = tests
                     break
-            
+
             if matching_tests:
                 # Create all test cases for this specific problem
                 for test_data in matching_tests:
@@ -331,8 +331,10 @@ class Command(BaseCommand):
                     )
                     test_cases_list.append(test_case)
                     visibility = "Hidden" if test_data["hidden"] else "Visible"
-                    self.stdout.write(f"Created test case for {task.title} ({visibility})")
-                    
+                    self.stdout.write(
+                        f"Created test case for {task.title} ({visibility})"
+                    )
+
                 tasks_processed += 1
                 if tasks_processed >= test_cases_count:
                     break
@@ -349,12 +351,14 @@ class Command(BaseCommand):
                     )
                     test_cases_list.append(test_case)
                     visibility = "Hidden" if i > 1 else "Visible"
-                    self.stdout.write(f"Created generic test case for {task.title} ({visibility})")
-                    
+                    self.stdout.write(
+                        f"Created generic test case for {task.title} ({visibility})"
+                    )
+
                     tasks_processed += 1
                     if tasks_processed >= test_cases_count:
                         break
-                        
+
             if tasks_processed >= test_cases_count:
                 break
 
@@ -565,14 +569,20 @@ class Command(BaseCommand):
                 if problem_name in task.title:
                     code_text = random.choice(solutions)
                     break
-            
+
             # Determine passed tests based on code quality
             if "TODO" in code_text:
-                passed_tests = random.randint(0, total_tests // 2)  # Poor performance for incomplete code
+                passed_tests = random.randint(
+                    0, total_tests // 2
+                )  # Poor performance for incomplete code
             elif "# Simple" in code_text or "brute force" in code_text.lower():
-                passed_tests = random.randint(total_tests // 2, total_tests)  # Decent performance
+                passed_tests = random.randint(
+                    total_tests // 2, total_tests
+                )  # Decent performance
             else:
-                passed_tests = random.randint(max(0, total_tests - 2), total_tests)  # Good performance
+                passed_tests = random.randint(
+                    max(0, total_tests - 2), total_tests
+                )  # Good performance
 
             # Add some variation to the code
             if random.choice([True, False]) and "TODO" not in code_text:
@@ -625,7 +635,7 @@ class Command(BaseCommand):
                     if problem_name in task.title:
                         improved_code = random.choice(solutions)
                         break
-                
+
                 submission = HomeworkSubmission.objects.create(
                     task=task,
                     student=student,

@@ -70,7 +70,7 @@ class Command(BaseCommand):
         # Create tasks with proper programming problems
         self.stdout.write(f"Creating {tasks_count} programming tasks...")
         tasks_list = []
-        
+
         # Define comprehensive programming problems with descriptions
         programming_problems = [
             {
@@ -89,7 +89,7 @@ factorial(0)  # Returns: 1
 ```""",
             },
             {
-                "title": "Binary Search Implementation", 
+                "title": "Binary Search Implementation",
                 "description": """Implement a binary search algorithm that finds the index of a target element in a sorted array.
 
 **Requirements:**
@@ -271,22 +271,24 @@ count_vowels("Python")       # Returns: 1
         for i in range(tasks_count):
             homework = random.choice(homework_list)
             problem = random.choice(programming_problems)
-            
+
             # Add variation to avoid exact duplicates
             task_number = (i % len(programming_problems)) + 1
             task_title = f"Problem {task_number}: {problem['title']}"
-            
+
             task = Task.objects.create(
                 homework=homework,
                 title=task_title,
-                description=problem['description'],
+                description=problem["description"],
             )
 
             tasks_list.append(task)
             self.stdout.write(f"Created task: {task.title}")
 
         # Add extra tasks to some homework to ensure variety
-        self.stdout.write("Adding additional programming challenges to random homework...")
+        self.stdout.write(
+            "Adding additional programming challenges to random homework..."
+        )
         for homework in random.sample(homework_list, min(10, len(homework_list))):
             extra_tasks = random.randint(1, 3)
             for j in range(extra_tasks):
@@ -294,7 +296,7 @@ count_vowels("Python")       # Returns: 1
                 task = Task.objects.create(
                     homework=homework,
                     title=f"Bonus Challenge: {problem['title']}",
-                    description=problem['description'],
+                    description=problem["description"],
                 )
                 tasks_list.append(task)
 
