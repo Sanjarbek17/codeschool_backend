@@ -67,78 +67,234 @@ class Command(BaseCommand):
             homework_list.append(homework)
             self.stdout.write(f"Created homework: {homework.title}")
 
-        # Create tasks
-        self.stdout.write(f"Creating {tasks_count} tasks...")
+        # Create tasks with proper programming problems
+        self.stdout.write(f"Creating {tasks_count} programming tasks...")
         tasks_list = []
-        programming_tasks = [
-            "Write a function to calculate factorial",
-            "Implement binary search algorithm",
-            "Create a class for managing student records",
-            "Solve the two-sum problem",
-            "Implement a basic calculator",
-            "Write a program to find prime numbers",
-            "Create a simple text parser",
-            "Implement sorting algorithms",
-            "Build a basic data structure",
-            "Write unit tests for given code",
+        
+        # Define comprehensive programming problems with descriptions
+        programming_problems = [
+            {
+                "title": "Factorial Calculator",
+                "description": """Write a function named `factorial(n)` that calculates the factorial of a given non-negative integer n.
+
+**Requirements:**
+- The function should return 1 for n = 0
+- Use either recursive or iterative approach
+- Handle edge cases properly
+
+**Example:**
+```python
+factorial(5)  # Returns: 120
+factorial(0)  # Returns: 1
+```""",
+            },
+            {
+                "title": "Binary Search Implementation", 
+                "description": """Implement a binary search algorithm that finds the index of a target element in a sorted array.
+
+**Requirements:**
+- Function signature: `binary_search(arr, target)`
+- Return the index if found, -1 if not found
+- Array is guaranteed to be sorted in ascending order
+- Use O(log n) time complexity
+
+**Example:**
+```python
+binary_search([1, 2, 3, 4, 5], 3)  # Returns: 2
+binary_search([1, 2, 3, 4, 5], 6)  # Returns: -1
+```""",
+            },
+            {
+                "title": "Two Sum Problem",
+                "description": """Given an array of integers and a target sum, return the indices of two numbers that add up to the target.
+
+**Requirements:**
+- Function signature: `two_sum(nums, target)`
+- Return a list containing two indices
+- Each input has exactly one solution
+- Cannot use the same element twice
+
+**Example:**
+```python
+two_sum([2, 7, 11, 15], 9)  # Returns: [0, 1]
+two_sum([3, 2, 4], 6)       # Returns: [1, 2]
+```""",
+            },
+            {
+                "title": "Prime Number Checker",
+                "description": """Create a function that determines whether a given number is prime.
+
+**Requirements:**
+- Function signature: `is_prime(n)`
+- Return True if prime, False otherwise
+- Handle edge cases (n < 2)
+- Optimize for efficiency
+
+**Example:**
+```python
+is_prime(7)   # Returns: True
+is_prime(4)   # Returns: False
+is_prime(1)   # Returns: False
+```""",
+            },
+            {
+                "title": "Palindrome Checker",
+                "description": """Write a function that checks if a string is a palindrome (reads the same forwards and backwards).
+
+**Requirements:**
+- Function signature: `is_palindrome(s)`
+- Ignore case sensitivity
+- Ignore spaces and punctuation
+- Return boolean value
+
+**Example:**
+```python
+is_palindrome("racecar")     # Returns: True
+is_palindrome("A man a plan a canal Panama")  # Returns: True
+```""",
+            },
+            {
+                "title": "Fibonacci Sequence",
+                "description": """Implement a function that returns the nth number in the Fibonacci sequence.
+
+**Requirements:**
+- Function signature: `fibonacci(n)`
+- Use either recursive or iterative approach
+- Handle edge cases (n < 0)
+- 0th fibonacci number is 0, 1st is 1
+
+**Example:**
+```python
+fibonacci(6)  # Returns: 8 (sequence: 0,1,1,2,3,5,8)
+fibonacci(0)  # Returns: 0
+```""",
+            },
+            {
+                "title": "Array Sorting",
+                "description": """Implement a sorting algorithm to sort an array of integers in ascending order.
+
+**Requirements:**
+- Function signature: `sort_array(arr)`
+- Return a new sorted array
+- Choose any sorting algorithm (bubble, insertion, merge, etc.)
+- Handle empty arrays
+
+**Example:**
+```python
+sort_array([64, 34, 25, 12, 22, 11, 90])  # Returns: [11, 12, 22, 25, 34, 64, 90]
+sort_array([])  # Returns: []
+```""",
+            },
+            {
+                "title": "String Reversal",
+                "description": """Create a function that reverses a given string.
+
+**Requirements:**
+- Function signature: `reverse_string(s)`
+- Do not use built-in reverse functions
+- Handle empty strings
+- Preserve original string
+
+**Example:**
+```python
+reverse_string("hello")  # Returns: "olleh"
+reverse_string("")       # Returns: ""
+```""",
+            },
+            {
+                "title": "Maximum Element Finder",
+                "description": """Write a function that finds the maximum element in a list of numbers.
+
+**Requirements:**
+- Function signature: `find_max(nums)`
+- Handle empty lists appropriately
+- Do not use built-in max() function
+- Return None for empty list
+
+**Example:**
+```python
+find_max([3, 7, 2, 9, 1])  # Returns: 9
+find_max([])               # Returns: None
+```""",
+            },
+            {
+                "title": "Sum of Digits",
+                "description": """Create a function that calculates the sum of all digits in a positive integer.
+
+**Requirements:**
+- Function signature: `sum_digits(n)`
+- Handle single digit numbers
+- Work with any positive integer
+- Return 0 for n = 0
+
+**Example:**
+```python
+sum_digits(123)   # Returns: 6 (1+2+3)
+sum_digits(9)     # Returns: 9
+```""",
+            },
+            {
+                "title": "List Intersection",
+                "description": """Find the common elements between two lists.
+
+**Requirements:**
+- Function signature: `find_intersection(list1, list2)`
+- Return a list of common elements
+- Remove duplicates from result
+- Preserve order from first list
+
+**Example:**
+```python
+find_intersection([1,2,3,4], [3,4,5,6])  # Returns: [3, 4]
+find_intersection([1,2,3], [4,5,6])      # Returns: []
+```""",
+            },
+            {
+                "title": "Count Vowels",
+                "description": """Write a function that counts the number of vowels in a given string.
+
+**Requirements:**
+- Function signature: `count_vowels(s)`
+- Count both uppercase and lowercase vowels
+- Vowels are: a, e, i, o, u
+- Return integer count
+
+**Example:**
+```python
+count_vowels("hello world")  # Returns: 3
+count_vowels("Python")       # Returns: 1
+```""",
+            },
         ]
 
-        math_tasks = [
-            "Solve quadratic equations",
-            "Calculate derivatives",
-            "Find the area under a curve",
-            "Solve system of linear equations",
-            "Calculate probability distributions",
-            "Prove geometric theorems",
-            "Analyze statistical data",
-            "Optimize functions",
-            "Calculate matrix operations",
-            "Solve differential equations",
-        ]
-
-        general_tasks = [
-            "Analyze the given text passage",
-            "Summarize the chapter content",
-            "Compare and contrast concepts",
-            "Identify key themes",
-            "Explain the process step by step",
-            "Provide examples and counterexamples",
-            "Critique the given argument",
-            "Design an experiment",
-            "Create a presentation",
-            "Write a research report",
-        ]
-
-        all_task_templates = programming_tasks + math_tasks + general_tasks
-
+        # Generate tasks using the programming problems
         for i in range(tasks_count):
             homework = random.choice(homework_list)
-            task_template = random.choice(all_task_templates)
-
-            # Add some variation to the task title
-            task_title = f"Task {i+1}: {task_template}"
-            if random.choice([True, False]):
-                task_title += f" - {fake.word().capitalize()}"
-
+            problem = random.choice(programming_problems)
+            
+            # Add variation to avoid exact duplicates
+            task_number = (i % len(programming_problems)) + 1
+            task_title = f"Problem {task_number}: {problem['title']}"
+            
             task = Task.objects.create(
                 homework=homework,
                 title=task_title,
-                description=fake.text(max_nb_chars=800),
+                description=problem['description'],
             )
 
             tasks_list.append(task)
             self.stdout.write(f"Created task: {task.title}")
 
         # Add extra tasks to some homework to ensure variety
-        self.stdout.write("Adding additional tasks to random homework...")
+        self.stdout.write("Adding additional programming challenges to random homework...")
         for homework in random.sample(homework_list, min(10, len(homework_list))):
             extra_tasks = random.randint(1, 3)
             for j in range(extra_tasks):
-                task_template = random.choice(all_task_templates)
+                problem = random.choice(programming_problems)
                 task = Task.objects.create(
                     homework=homework,
-                    title=f"Bonus Task: {task_template}",
-                    description=fake.text(max_nb_chars=600),
+                    title=f"Bonus Challenge: {problem['title']}",
+                    description=problem['description'],
                 )
                 tasks_list.append(task)
 
