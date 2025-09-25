@@ -451,8 +451,24 @@ class TeacherScheduleView(APIView):
                                     "lesson": "Variables and Data Types",
                                 }
                             ],
-                            "Wednesday": [...],
-                            "Friday": [...],
+                            "Wednesday": [
+                                {
+                                    "group": "Python Intermediate",
+                                    "start_time": "14:00:00",
+                                    "end_time": "16:00:00",
+                                    "course": "Advanced Python",
+                                    "lesson": "Object-Oriented Programming",
+                                }
+                            ],
+                            "Friday": [
+                                {
+                                    "group": "Python Advanced",
+                                    "start_time": "16:00:00",
+                                    "end_time": "18:00:00",
+                                    "course": "Python Projects",
+                                    "lesson": "Web Development Basics",
+                                }
+                            ],
                         },
                         "total_lessons": 3,
                         "navigation": {
