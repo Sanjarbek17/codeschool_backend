@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from apps.courses.models import Lessons, Attendance
+from apps.courses.models import Course, Lessons, Attendance
 from apps.accounts.models import Teacher, Student, Group
 from faker import Faker
 from datetime import date, timedelta
@@ -13,6 +13,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
+            "--courses", type=int, default=8, help="Number of courses to create"
+        )
+        parser.add_argument(
             "--lessons", type=int, default=20, help="Number of lessons to create"
         )
         parser.add_argument(
@@ -23,6 +26,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        courses_count = options["courses"]
         lessons_count = options["lessons"]
         attendance_count = options["attendance_records"]
 
@@ -57,6 +61,11 @@ class Command(BaseCommand):
             )
             return
 
+        # Create courses first
+        self.stdout.write(f"Creating {courses_count} courses...")
+        courses_created = self._create_courses(courses_count, teachers)
+        courses = list(Course.objects.all())  # Get all courses including existing ones
+
         # Create lessons
         self.stdout.write(f"Creating {lessons_count} lessons...")
         lessons = []
@@ -77,11 +86,17 @@ class Command(BaseCommand):
             subject = random.choice(subjects)
             lesson_number = random.randint(1, 50)
 
+            # Assign to a random course if available
+            course = random.choice(courses) if courses else None
+            order = random.randint(1, 20) if course else 1
+
             lesson = Lessons.objects.create(
                 title=f"{subject} - Lesson {lesson_number}: {fake.catch_phrase()}",
                 description=fake.text(max_nb_chars=500),
                 video_url=fake.url() if random.choice([True, False]) else None,
                 content=fake.text(max_nb_chars=1000),
+                course=course,
+                order=order,
             )
 
             # Assign random teachers to lesson (1-2 teachers per lesson)
@@ -145,7 +160,52 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Successfully created {len(lessons)} lessons and "
+                f"Successfully created {courses_created} courses, {len(lessons)} lessons and "
                 f"{len(attendance_records)} attendance records"
             )
         )
+
+    def _create_courses(self, courses_count, teachers):
+        """Helper method to create courses"""
+        course_topics = [
+            "Python Programming",
+            "Web Development",
+            "Data Science",
+            "Machine Learning",
+            "JavaScript Fundamentals",
+            "React Development",
+            "Django Framework",
+            "Database Design",
+        ]
+
+        levels = ["beginner", "intermediate", "advanced"]
+        created_count = 0
+
+        for i in range(courses_count):
+            topic = random.choice(course_topics)
+            level = random.choice(levels)
+
+            # Ensure unique course titles
+            title = f"{topic} - {level.title()}"
+            counter = 1
+            base_title = title
+            while Course.objects.filter(title=title).exists():
+                title = f"{base_title} {counter}"
+                counter += 1
+
+            course = Course.objects.create(
+                title=title,
+                description=fake.paragraph(nb_sentences=4),
+                duration_weeks=random.randint(6, 16),
+                level=level,
+                is_active=random.choice([True, True, True, False]),  # 75% active
+            )
+
+            # Assign 1-2 teachers to each course
+            assigned_teachers = random.sample(
+                teachers, k=random.randint(1, min(2, len(teachers)))
+            )
+            course.teachers.set(assigned_teachers)
+            created_count += 1
+
+        return created_count

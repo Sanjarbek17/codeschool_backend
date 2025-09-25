@@ -48,10 +48,14 @@ case "$1" in
         echo
         echo "🔍 INDIVIDUAL APPS:"
         echo "  ./dummy_data.sh accounts           # Create only accounts data"
-        echo "  ./dummy_data.sh courses            # Create only courses data"
+        echo "  ./dummy_data.sh courses            # Create only courses data (includes Course models)"
         echo "  ./dummy_data.sh assignments        # Create only assignments data"
         echo "  ./dummy_data.sh submissions        # Create only submissions data"
         echo "  ./dummy_data.sh progress           # Create only progress data"
+        echo "  ./dummy_data.sh schedules          # Create only schedule data"
+        echo "  ./dummy_data.sh payments           # Create only payment data"
+        echo "  ./dummy_data.sh payment-status     # Create only payment status data"
+        echo "  ./dummy_data.sh admin-models       # Create payments + payment status"
         echo
         echo "📋 INFORMATION:"
         echo "  ./dummy_data.sh list               # List all available Django commands"
@@ -61,14 +65,29 @@ case "$1" in
     "create-all")
         echo "Creating complete dummy dataset..."
         run_command "$PYTHON_CMD manage.py create_all_dummy_data"
+        echo "Creating additional models (courses, schedules, payments)..."
+        run_command "$PYTHON_CMD manage.py create_course_dummy_data"
+        run_command "$PYTHON_CMD manage.py create_schedule_dummy_data"
+        run_command "$PYTHON_CMD manage.py create_payment_dummy_data"
+        run_command "$PYTHON_CMD manage.py create_student_payment_status_dummy_data"
         ;;
     "create-small")
         echo "Creating small test dataset..."
         run_command "$PYTHON_CMD manage.py create_all_dummy_data --teachers 3 --students 15 --groups 2 --lessons 5 --homework 8 --tasks 20 --submissions 30 --test-cases 25 --attendance-records 40 --homework-progress 20 --task-progress 50"
+        echo "Creating additional models (courses, schedules, payments)..."
+        run_command "$PYTHON_CMD manage.py create_course_dummy_data --courses 3"
+        run_command "$PYTHON_CMD manage.py create_schedule_dummy_data --schedules 10"
+        run_command "$PYTHON_CMD manage.py create_payment_dummy_data --months 3 --base-amount 100"
+        run_command "$PYTHON_CMD manage.py create_student_payment_status_dummy_data"
         ;;
     "create-large")
         echo "Creating large dataset..."
         run_command "$PYTHON_CMD manage.py create_all_dummy_data --teachers 25 --students 200 --groups 10 --lessons 50 --homework 80 --tasks 300 --submissions 800 --test-cases 400 --attendance-records 500 --homework-progress 400 --task-progress 1000"
+        echo "Creating additional models (courses, schedules, payments)..."
+        run_command "$PYTHON_CMD manage.py create_course_dummy_data --courses 20"
+        run_command "$PYTHON_CMD manage.py create_schedule_dummy_data --schedules 60"
+        run_command "$PYTHON_CMD manage.py create_payment_dummy_data --months 12 --base-amount 150"
+        run_command "$PYTHON_CMD manage.py create_student_payment_status_dummy_data"
         ;;
     "clean")
         echo "⚠️  WARNING: This will delete ALL data from the database!"
@@ -110,6 +129,23 @@ case "$1" in
         echo "Creating progress dummy data..."
         run_command "$PYTHON_CMD manage.py create_progress_dummy_data"
         ;;
+    "schedules")
+        echo "Creating schedules dummy data..."
+        run_command "$PYTHON_CMD manage.py create_schedule_dummy_data"
+        ;;
+    "payments")
+        echo "Creating payments dummy data..."
+        run_command "$PYTHON_CMD manage.py create_payment_dummy_data"
+        ;;
+    "payment-status")
+        echo "Creating payment status dummy data..."
+        run_command "$PYTHON_CMD manage.py create_student_payment_status_dummy_data"
+        ;;
+    "admin-models")
+        echo "Creating admin panel dummy data (payments + payment status)..."
+        run_command "$PYTHON_CMD manage.py create_payment_dummy_data"
+        run_command "$PYTHON_CMD manage.py create_student_payment_status_dummy_data"
+        ;;
     "list")
         echo "Available Django management commands:"
         echo
@@ -119,17 +155,20 @@ case "$1" in
         echo "Database status:"
         echo "==============="
         $PYTHON_CMD manage.py shell -c "
-from apps.accounts.models import User, Teacher, Student, Group
-from apps.courses.models import Lessons, Attendance
+from apps.accounts.models import User, Teacher, Student, Group, Schedule
+from apps.courses.models import Course, Lessons, Attendance
 from apps.assignments.models import Homework, Task
 from apps.submissions.models import HomeworkSubmission, TestCase
 from apps.progress.models import HomeworkProgress, TaskProgress
+from apps.admin_panel.models import Payment, StudentPaymentStatus
 
 print(f'👥 Users: {User.objects.count()}')
 print(f'👨‍🏫 Teachers: {Teacher.objects.count()}')
 print(f'👨‍🎓 Students: {Student.objects.count()}')
 print(f'👥 Groups: {Group.objects.count()}')
-print(f'📚 Lessons: {Lessons.objects.count()}')
+print(f'� Schedules: {Schedule.objects.count()}')
+print(f'�📚 Courses: {Course.objects.count()}')
+print(f'📖 Lessons: {Lessons.objects.count()}')
 print(f'📋 Attendance: {Attendance.objects.count()}')
 print(f'📝 Homework: {Homework.objects.count()}')
 print(f'📋 Tasks: {Task.objects.count()}')
@@ -137,6 +176,8 @@ print(f'💾 Submissions: {HomeworkSubmission.objects.count()}')
 print(f'🧪 Test Cases: {TestCase.objects.count()}')
 print(f'📊 Homework Progress: {HomeworkProgress.objects.count()}')
 print(f'📈 Task Progress: {TaskProgress.objects.count()}')
+print(f'💳 Payments: {Payment.objects.count()}')
+print(f'⚠️  Payment Statuses: {StudentPaymentStatus.objects.count()}')
 "
         ;;
     *)
