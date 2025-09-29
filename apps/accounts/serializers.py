@@ -158,8 +158,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "username", "date_joined")
 
     def get_profile_type(self, obj):
-        """Determine if user is a teacher or student."""
-        if hasattr(obj, "teacher_profile"):
+        """Determine if user is an admin, teacher, or student."""
+        if obj.is_staff or obj.is_superuser:
+            return "admin"
+        elif hasattr(obj, "teacher_profile"):
             return "teacher"
         elif hasattr(obj, "student_profile"):
             return "student"
@@ -167,7 +169,18 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def get_profile_data(self, obj):
         """Get profile data based on user type."""
-        if hasattr(obj, "teacher_profile"):
+        if obj.is_staff or obj.is_superuser:
+            return {
+                "username": obj.username,
+                "email": obj.email,
+                "first_name": obj.first_name,
+                "last_name": obj.last_name,
+                "is_staff": obj.is_staff,
+                "is_superuser": obj.is_superuser,
+                "date_joined": obj.date_joined,
+                "last_login": obj.last_login,
+            }
+        elif hasattr(obj, "teacher_profile"):
             return TeacherProfileSerializer(obj.teacher_profile).data
         elif hasattr(obj, "student_profile"):
             return StudentProfileSerializer(obj.student_profile).data
