@@ -1,0 +1,50 @@
+###
+# CodeSchool Backend API - Admin Panel Testing
+# This file contains test requests for admin registration functionality
+# Base URL: http://localhost:8000
+###
+
+### Variables
+@baseUrl = http://localhost:8000
+@adminToken = your_admin_token_here
+
+###
+# STEP 1: ADMIN LOGIN
+# Admin logs in to get authentication token
+POST {{baseUrl}}/api/auth/login/
+Content-Type: application/json
+
+{
+    "username": "admin",
+    "password": "admin"
+}
+
+###
+# STEP 2: REGISTER NEW STUDENT
+# Admin registers a new student with auto-generated credentials
+POST {{baseUrl}}/api/admin-panel/register/student/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+    "email": "teststudent@example.com",
+    "first_name": "Alice",
+    "last_name": "Johnson",
+    "phone_number": "+1234567890",
+    "parents_phone_number": "+1234567899",
+    "groups": []
+}
+
+###
+# STEP 3: REGISTER NEW TEACHER
+# Admin registers a new teacher with auto-generated credentials
+POST {{baseUrl}}/api/admin-panel/register/teacher/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+    "email": "testteacher@example.com",
+    "first_name": "Bob",
+    "last_name": "Wilson",
+    "phone_number": "+1987654321"
+}
