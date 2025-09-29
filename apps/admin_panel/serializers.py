@@ -1,5 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from rest_framework.authtoken.models import Token
+import random
+import string
+from datetime import datetime
 from .models import Payment, StudentPaymentStatus
 from apps.accounts.models import Teacher, Student, Group
 from apps.courses.models import Course, Lessons
@@ -371,3 +376,174 @@ class CourseManagementSerializer(serializers.ModelSerializer):
 
     def get_groups_using_course(self, obj):
         return obj.current_groups.count()
+
+
+class AdminStudentRegistrationSerializer(serializers.ModelSerializer):
+    """
+    Serializer for admin to register new students.
+    Auto-generates username and password for simplicity.
+    """
+
+    # Profile fields - username and password will be auto-generated
+    first_name = serializers.CharField(max_length=150)
+    last_name = serializers.CharField(max_length=150)
+    phone_number = serializers.CharField(max_length=20)
+    parents_phone_number = serializers.CharField(max_length=20)
+    groups = serializers.PrimaryKeyRelatedField(
+        queryset=Group.objects.all(), many=True, required=False
+    )
+
+    class Meta:
+        model = User
+        fields = (
+            "email",
+            "first_name",
+            "last_name",
+            "phone_number",
+            "parents_phone_number",
+            "groups",
+        )
+
+    def _generate_unique_username(self, first_name):
+        """Generate a unique username based on first_name."""
+        # Clean first_name and make it lowercase
+        base_username = first_name.lower().replace(" ", "")
+
+        # Try simple username first
+        if not User.objects.filter(username=base_username).exists():
+            return base_username
+
+        # Add numbers until we find a unique one
+        counter = 1
+        while True:
+            username = f"{base_username}{counter}"
+            if not User.objects.filter(username=username).exists():
+                return username
+            counter += 1
+
+    def _generate_simple_password(self, first_name):
+        """Generate a simple but secure password."""
+        # Simple pattern: first_name + current_year + simple suffix
+        year = datetime.now().year
+        clean_name = first_name.lower().replace(" ", "")
+        return f"{clean_name}{year}!"
+
+    def create(self, validated_data):
+        """Create user and student profile with auto-generated credentials."""
+        # Remove non-user fields
+        first_name = validated_data.pop("first_name")
+        last_name = validated_data.pop("last_name")
+        phone_number = validated_data.pop("phone_number")
+        parents_phone_number = validated_data.pop("parents_phone_number")
+        groups = validated_data.pop("groups", [])
+
+        # Generate username and password
+        username = self._generate_unique_username(first_name)
+        password = self._generate_simple_password(first_name)
+
+        # Add generated credentials to validated_data
+        validated_data["username"] = username
+        validated_data["password"] = password
+
+        # Create user
+        user = User.objects.create_user(**validated_data)
+
+        # Store the plain password for response (before it gets hashed)
+        user._plain_password = password
+
+        # Create student profile
+        student = Student.objects.create(
+            user=user,
+            first_name=first_name,
+            last_name=last_name,
+            phone_number=phone_number,
+            parents_phone_number=parents_phone_number,
+        )
+
+        # Add groups if provided
+        if groups:
+            student.groups.set(groups)
+
+        # Create authentication token
+        Token.objects.create(user=user)
+
+        return user
+
+
+class AdminTeacherRegistrationSerializer(serializers.ModelSerializer):
+    """
+    Serializer for admin to register new teachers.
+    Auto-generates username and password for simplicity.
+    """
+
+    # Profile fields - username and password will be auto-generated
+    first_name = serializers.CharField(max_length=150)
+    last_name = serializers.CharField(max_length=150)
+    phone_number = serializers.CharField(max_length=20)
+
+    class Meta:
+        model = User
+        fields = (
+            "email",
+            "first_name",
+            "last_name",
+            "phone_number",
+        )
+
+    def _generate_unique_username(self, first_name):
+        """Generate a unique username based on first_name."""
+        # Clean first_name and make it lowercase
+        base_username = first_name.lower().replace(" ", "")
+
+        # Try simple username first
+        if not User.objects.filter(username=base_username).exists():
+            return base_username
+
+        # Add numbers until we find a unique one
+        counter = 1
+        while True:
+            username = f"{base_username}{counter}"
+            if not User.objects.filter(username=username).exists():
+                return username
+            counter += 1
+
+    def _generate_simple_password(self, first_name):
+        """Generate a simple but secure password."""
+        # Simple pattern: first_name + current_year + simple suffix
+        year = datetime.now().year
+        clean_name = first_name.lower().replace(" ", "")
+        return f"{clean_name}{year}!"
+
+    def create(self, validated_data):
+        """Create user and teacher profile with auto-generated credentials."""
+        # Remove non-user fields
+        first_name = validated_data.pop("first_name")
+        last_name = validated_data.pop("last_name")
+        phone_number = validated_data.pop("phone_number")
+
+        # Generate username and password
+        username = self._generate_unique_username(first_name)
+        password = self._generate_simple_password(first_name)
+
+        # Add generated credentials to validated_data
+        validated_data["username"] = username
+        validated_data["password"] = password
+
+        # Create user
+        user = User.objects.create_user(**validated_data)
+
+        # Store the plain password for response (before it gets hashed)
+        user._plain_password = password
+
+        # Create teacher profile
+        Teacher.objects.create(
+            user=user,
+            first_name=first_name,
+            last_name=last_name,
+            phone_number=phone_number,
+        )
+
+        # Create authentication token
+        Token.objects.create(user=user)
+
+        return user

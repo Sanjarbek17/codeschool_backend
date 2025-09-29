@@ -22,4 +22,15 @@ urlpatterns = [
         views.StudentPaymentSummaryView.as_view(),
         name="student-payment-summary",
     ),
+    # Admin registration endpoints
+    path(
+        "register/student/",
+        views.AdminStudentRegistrationView.as_view(),
+        name="admin-register-student",
+    ),
+    path(
+        "register/teacher/",
+        views.AdminTeacherRegistrationView.as_view(),
+        name="admin-register-teacher",
+    ),
 ]

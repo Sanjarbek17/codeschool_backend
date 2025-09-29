@@ -21,6 +21,8 @@ from .serializers import (
     TeacherManagementSerializer,
     GroupManagementSerializer,
     CourseManagementSerializer,
+    AdminStudentRegistrationSerializer,
+    AdminTeacherRegistrationSerializer,
 )
 from .permissions import IsAdminUser, IsOwnerOrAdmin
 from apps.accounts.models import Teacher, Student, Group
@@ -701,3 +703,91 @@ class StudentPaymentStatusViewSet(viewsets.ModelViewSet):
                 {"error": "Student is not suspended or warned"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+
+class AdminStudentRegistrationView(APIView):
+    """
+    Admin endpoint for registering new students.
+    Only accessible by admin users.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        """Register a new student account with auto-generated credentials."""
+        serializer = AdminStudentRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            student = user.student_profile
+
+            # Get the generated plain password
+            generated_password = getattr(user, "_plain_password", None)
+
+            return Response(
+                {
+                    "message": "Student registered successfully",
+                    "credentials": {
+                        "username": user.username,
+                        "password": generated_password,
+                        "note": "Please provide these credentials to the student. They can change them later.",
+                    },
+                    "user": {
+                        "id": user.id,
+                        "username": user.username,
+                        "email": user.email,
+                    },
+                    "student": {
+                        "id": student.id,
+                        "first_name": student.first_name,
+                        "last_name": student.last_name,
+                        "phone_number": student.phone_number,
+                        "parents_phone_number": student.parents_phone_number,
+                        "groups": [group.id for group in student.groups.all()],
+                    },
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminTeacherRegistrationView(APIView):
+    """
+    Admin endpoint for registering new teachers.
+    Only accessible by admin users.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        """Register a new teacher account with auto-generated credentials."""
+        serializer = AdminTeacherRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            teacher = user.teacher_profile
+
+            # Get the generated plain password
+            generated_password = getattr(user, "_plain_password", None)
+
+            return Response(
+                {
+                    "message": "Teacher registered successfully",
+                    "credentials": {
+                        "username": user.username,
+                        "password": generated_password,
+                        "note": "Please provide these credentials to the teacher. They can change them later.",
+                    },
+                    "user": {
+                        "id": user.id,
+                        "username": user.username,
+                        "email": user.email,
+                    },
+                    "teacher": {
+                        "id": teacher.id,
+                        "first_name": teacher.first_name,
+                        "last_name": teacher.last_name,
+                        "phone_number": teacher.phone_number,
+                    },
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
