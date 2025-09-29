@@ -11,7 +11,7 @@
 ###
 # STEP 1: ADMIN LOGIN
 # Admin logs in to get authentication token
-POST {{baseUrl}}/api/auth/login/
+POST {{baseUrl}}/api/login/
 Content-Type: application/json
 
 {

@@ -159,7 +159,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def get_profile_type(self, obj):
         """Determine if user is an admin, teacher, or student."""
-        if obj.is_staff or obj.is_superuser:
+        if obj.is_staff and obj.is_superuser:
             return "admin"
         elif hasattr(obj, "teacher_profile"):
             return "teacher"
@@ -169,7 +169,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def get_profile_data(self, obj):
         """Get profile data based on user type."""
-        if obj.is_staff or obj.is_superuser:
+        if obj.is_staff and obj.is_superuser:
             return {
                 "username": obj.username,
                 "email": obj.email,
