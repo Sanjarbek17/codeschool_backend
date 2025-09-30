@@ -6,7 +6,7 @@
 
 ### Variables
 @baseUrl = http://localhost:8000
-@adminToken = your_admin_token_here
+@adminToken = 08221832adcbbf71de627ce705bece788edd86c3
 
 ###
 # STEP 1: ADMIN LOGIN
@@ -15,7 +15,7 @@ POST {{baseUrl}}/api/login/
 Content-Type: application/json
 
 {
-    "username": "admin",
+    "username": "admin1",
     "password": "admin"
 }
 
@@ -27,11 +27,11 @@ Content-Type: application/json
 Authorization: Token {{adminToken}}
 
 {
-    "email": "teststudent@example.com",
     "first_name": "Alice",
     "last_name": "Johnson",
     "phone_number": "+1234567890",
     "parents_phone_number": "+1234567899",
+    "notes": "Allergic to peanuts",
     "groups": []
 }
 

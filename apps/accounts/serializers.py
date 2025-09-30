@@ -33,6 +33,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         allow_blank=True,
         help_text="Required for students only",
     )
+    admin_notes = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Admin notes for students (admin only)",
+    )
 
     class Meta:
         model = User
@@ -46,6 +51,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             "last_name",
             "phone_number",
             "parents_phone_number",
+            "admin_notes",
         )
 
     def validate(self, attrs):
@@ -72,6 +78,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         last_name = validated_data.pop("last_name")
         phone_number = validated_data.pop("phone_number")
         parents_phone_number = validated_data.pop("parents_phone_number", "")
+        admin_notes = validated_data.pop("admin_notes", "")
 
         # Create user
         user = User.objects.create_user(**validated_data)
@@ -91,6 +98,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                 last_name=last_name,
                 phone_number=phone_number,
                 parents_phone_number=parents_phone_number,
+                admin_notes=admin_notes,
             )
 
         # Create authentication token
@@ -169,6 +177,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def get_profile_data(self, obj):
         """Get profile data based on user type."""
+        request = self.context.get('request')
+        
         if obj.is_staff and obj.is_superuser:
             return {
                 "username": obj.username,
@@ -183,7 +193,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
         elif hasattr(obj, "teacher_profile"):
             return TeacherProfileSerializer(obj.teacher_profile).data
         elif hasattr(obj, "student_profile"):
-            return StudentProfileSerializer(obj.student_profile).data
+            # Use admin serializer if request user is staff, otherwise use regular serializer
+            if request and request.user.is_staff:
+                return StudentAdminSerializer(obj.student_profile).data
+            else:
+                return StudentProfileSerializer(obj.student_profile).data
         return None
 
 
@@ -210,6 +224,34 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             "parents_phone_number",
             "groups",
             "groups_data",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("created_at", "updated_at")
+
+    def get_groups_data(self, obj):
+        """Get detailed group information."""
+        return [
+            {"id": group.id, "name": group.name, "teacher_count": group.teacher_count}
+            for group in obj.groups.all()
+        ]
+
+
+class StudentAdminSerializer(serializers.ModelSerializer):
+    """Admin-only serializer for Student profile data that includes admin_notes."""
+
+    groups_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Student
+        fields = (
+            "first_name",
+            "last_name",
+            "phone_number",
+            "parents_phone_number",
+            "groups",
+            "groups_data",
+            "admin_notes",
             "created_at",
             "updated_at",
         )
@@ -300,16 +342,25 @@ class GroupSerializer(serializers.ModelSerializer):
 
     def get_students_data(self, obj):
         """Get detailed student information."""
-        return [
-            {
+        request = self.context.get('request')
+        
+        students_data = []
+        for student in obj.students.all():
+            student_info = {
                 "id": student.id,
                 "full_name": student.full_name,
                 "first_name": student.first_name,
                 "last_name": student.last_name,
                 "phone_number": student.phone_number,
             }
-            for student in obj.students.all()
-        ]
+            
+            # Include admin_notes if request user is staff
+            if request and request.user.is_staff:
+                student_info["admin_notes"] = student.admin_notes
+                
+            students_data.append(student_info)
+            
+        return students_data
 
     def get_lessons_data(self, obj):
         """Get detailed lessons information for this group by current course."""

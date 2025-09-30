@@ -742,6 +742,7 @@ class AdminStudentRegistrationView(APIView):
                         "last_name": student.last_name,
                         "phone_number": student.phone_number,
                         "parents_phone_number": student.parents_phone_number,
+                        "admin_notes": student.admin_notes,
                         "groups": [group.id for group in student.groups.all()],
                     },
                 },

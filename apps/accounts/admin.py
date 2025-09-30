@@ -51,6 +51,7 @@ class StudentAdmin(admin.ModelAdmin):
         "phone_number",
         "parents_phone_number",
         "user",
+        "has_admin_notes",
         "created_at",
     )
     list_filter = ("created_at", "groups")
@@ -79,11 +80,25 @@ class StudentAdmin(admin.ModelAdmin):
         ),
         ("Groups", {"fields": ("groups",)}),
         (
+            "Admin Notes",
+            {
+                "fields": ("admin_notes",),
+                "description": "Internal notes for admin use only - not visible to students",
+            },
+        ),
+        (
             "Timestamps",
             {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},
         ),
     )
     readonly_fields = ("created_at", "updated_at")
+
+    def has_admin_notes(self, obj):
+        """Display whether the student has admin notes."""
+        return bool(obj.admin_notes)
+    
+    has_admin_notes.boolean = True
+    has_admin_notes.short_description = "Has Admin Notes"
 
 
 @admin.register(Group)

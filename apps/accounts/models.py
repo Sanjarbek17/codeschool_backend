@@ -350,6 +350,13 @@ class Student(models.Model):
         blank=True,
         help_text="Groups this student attends",
     )
+    
+    # Admin-only notes field
+    admin_notes = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Internal notes for admin use only - not visible to students",
+    )
 
     # Additional student-specific fields
     created_at = models.DateTimeField(auto_now_add=True)

@@ -245,6 +245,7 @@ class StudentManagementSerializer(serializers.ModelSerializer):
             "groups",
             "groups_count",
             "active_payments",
+            "admin_notes",
             "created_at",
             "updated_at",
         ]
@@ -389,6 +390,7 @@ class AdminStudentRegistrationSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(max_length=150)
     phone_number = serializers.CharField(max_length=20)
     parents_phone_number = serializers.CharField(max_length=20)
+    admin_notes = serializers.CharField(required=False, allow_blank=True)
     groups = serializers.PrimaryKeyRelatedField(
         queryset=Group.objects.all(), many=True, required=False
     )
@@ -401,6 +403,7 @@ class AdminStudentRegistrationSerializer(serializers.ModelSerializer):
             "last_name",
             "phone_number",
             "parents_phone_number",
+            "admin_notes",
             "groups",
         )
 
@@ -435,6 +438,7 @@ class AdminStudentRegistrationSerializer(serializers.ModelSerializer):
         last_name = validated_data.pop("last_name")
         phone_number = validated_data.pop("phone_number")
         parents_phone_number = validated_data.pop("parents_phone_number")
+        admin_notes = validated_data.pop("admin_notes", "")
         groups = validated_data.pop("groups", [])
 
         # Generate username and password
@@ -458,6 +462,7 @@ class AdminStudentRegistrationSerializer(serializers.ModelSerializer):
             last_name=last_name,
             phone_number=phone_number,
             parents_phone_number=parents_phone_number,
+            admin_notes=admin_notes,
         )
 
         # Add groups if provided
