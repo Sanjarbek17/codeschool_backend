@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 from .models import Notification, NotificationPreference, PaymentNotification
 from .serializers import (
@@ -63,6 +65,63 @@ class NotificationViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["notification_type", "is_read", "priority"]
 
+    @swagger_auto_schema(
+        operation_description="List notifications based on user role",
+        operation_summary="List Notifications",
+        tags=["Notifications"],
+        responses={200: NotificationSerializer(many=True)},
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Create a new notification",
+        operation_summary="Create Notification",
+        tags=["Notifications"],
+        request_body=NotificationSerializer,
+        responses={201: NotificationSerializer},
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Retrieve detailed notification information",
+        operation_summary="Get Notification Detail",
+        tags=["Notifications"],
+        responses={200: NotificationSerializer},
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Update a notification",
+        operation_summary="Update Notification",
+        tags=["Notifications"],
+        request_body=NotificationSerializer,
+        responses={200: NotificationSerializer},
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Partially update a notification",
+        operation_summary="Partially Update Notification",
+        tags=["Notifications"],
+        request_body=NotificationSerializer,
+        responses={200: NotificationSerializer},
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Delete a notification",
+        operation_summary="Delete Notification",
+        tags=["Notifications"],
+        responses={204: "Notification deleted successfully"},
+    )
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
     def get_queryset(self):
         """
         Return notifications based on user role.
@@ -74,6 +133,13 @@ class NotificationViewSet(viewsets.ModelViewSet):
         """Add request to serializer context"""
         return {"request": self.request}
 
+    @swagger_auto_schema(
+        operation_description="Mark a specific notification as read",
+        operation_summary="Mark Notification as Read",
+        tags=["Notifications"],
+        request_body=openapi.Schema(type=openapi.TYPE_OBJECT),
+        responses={200: NotificationSerializer},
+    )
     @action(detail=True, methods=["post"])
     def mark_read(self, request, pk=None):
         """Mark a specific notification as read"""
@@ -83,6 +149,21 @@ class NotificationViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(notification)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_description="Mark all notifications as read for the current user",
+        operation_summary="Mark All Notifications as Read",
+        tags=["Notifications"],
+        request_body=MarkNotificationsReadSerializer,
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "message": openapi.Schema(type=openapi.TYPE_STRING),
+                    "count": openapi.Schema(type=openapi.TYPE_INTEGER),
+                },
+            )
+        },
+    )
     @action(detail=False, methods=["post"])
     def mark_all_read(self, request):
         """Mark all notifications as read for the current user"""
@@ -98,6 +179,12 @@ class NotificationViewSet(viewsets.ModelViewSet):
             {"message": f"Marked {count} notifications as read", "count": count}
         )
 
+    @swagger_auto_schema(
+        operation_description="Get notification statistics for the current user",
+        operation_summary="Get Notification Statistics",
+        tags=["Notifications"],
+        responses={200: NotificationStatsSerializer},
+    )
     @action(detail=False, methods=["get"])
     def stats(self, request):
         """Get notification statistics for the current user"""
@@ -105,6 +192,12 @@ class NotificationViewSet(viewsets.ModelViewSet):
         serializer = NotificationStatsSerializer(stats)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_description="Get only unread notifications",
+        operation_summary="Get Unread Notifications",
+        tags=["Notifications"],
+        responses={200: NotificationSerializer(many=True)},
+    )
     @action(detail=False, methods=["get"])
     def unread(self, request):
         """Get only unread notifications"""
@@ -118,6 +211,13 @@ class NotificationViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(unread_notifications, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_description="Create a new notification (admin only)",
+        operation_summary="Create Notification (Admin)",
+        tags=["Notifications"],
+        request_body=CreateNotificationSerializer,
+        responses={201: NotificationSerializer},
+    )
     @action(detail=False, methods=["post"], permission_classes=[IsAdminUser])
     def create_notification(self, request):
         """Create a new notification (admin only)"""
@@ -134,6 +234,22 @@ class NotificationViewSet(viewsets.ModelViewSet):
         )
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
+    @swagger_auto_schema(
+        operation_description="Manually trigger bulk payment check (admin only)",
+        operation_summary="Trigger Payment Check",
+        tags=["Notifications"],
+        request_body=openapi.Schema(type=openapi.TYPE_OBJECT),
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "success": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "message": openapi.Schema(type=openapi.TYPE_STRING),
+                    "notifications_sent": openapi.Schema(type=openapi.TYPE_INTEGER),
+                },
+            )
+        },
+    )
     @action(detail=False, methods=["post"], permission_classes=[IsAdminUser])
     def trigger_payment_check(self, request):
         """Manually trigger bulk payment check (admin only)"""
@@ -158,13 +274,71 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
 class PaymentNotificationViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for managing payment notifications (admin only).
+    ViewSet for managing payment-specific notifications.
+    Includes additional payment-related functionality.
     """
 
     serializer_class = PaymentNotificationSerializer
     permission_classes = [IsAdminUser]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["payment_type", "payment_status", "student", "teacher"]
+
+    @swagger_auto_schema(
+        operation_description="List payment notifications",
+        operation_summary="List Payment Notifications",
+        tags=["Notifications"],
+        responses={200: PaymentNotificationSerializer(many=True)},
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Create a new payment notification",
+        operation_summary="Create Payment Notification",
+        tags=["Notifications"],
+        request_body=PaymentNotificationSerializer,
+        responses={201: PaymentNotificationSerializer},
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Retrieve detailed payment notification information",
+        operation_summary="Get Payment Notification Detail",
+        tags=["Notifications"],
+        responses={200: PaymentNotificationSerializer},
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Update a payment notification",
+        operation_summary="Update Payment Notification",
+        tags=["Notifications"],
+        request_body=PaymentNotificationSerializer,
+        responses={200: PaymentNotificationSerializer},
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Partially update a payment notification",
+        operation_summary="Partially Update Payment Notification",
+        tags=["Notifications"],
+        request_body=PaymentNotificationSerializer,
+        responses={200: PaymentNotificationSerializer},
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Delete a payment notification",
+        operation_summary="Delete Payment Notification",
+        tags=["Notifications"],
+        responses={204: "Payment notification deleted successfully"},
+    )
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
 
     def get_queryset(self):
         """Return all payment notifications for admin users"""
@@ -174,6 +348,13 @@ class PaymentNotificationViewSet(viewsets.ModelViewSet):
         """Add request to serializer context"""
         return {"request": self.request}
 
+    @swagger_auto_schema(
+        operation_description="Create a new payment notification",
+        operation_summary="Create Payment Notification (Advanced)",
+        tags=["Notifications"],
+        request_body=CreatePaymentNotificationSerializer,
+        responses={201: PaymentNotificationSerializer},
+    )
     @action(detail=False, methods=["post"])
     def create_payment_notification(self, request):
         """Create a new payment notification"""
@@ -205,6 +386,63 @@ class NotificationPreferenceViewSet(viewsets.ModelViewSet):
     serializer_class = NotificationPreferenceSerializer
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="List notification preferences for the current user",
+        operation_summary="List Notification Preferences",
+        tags=["Notifications"],
+        responses={200: NotificationPreferenceSerializer(many=True)},
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Create notification preferences",
+        operation_summary="Create Notification Preferences",
+        tags=["Notifications"],
+        request_body=NotificationPreferenceSerializer,
+        responses={201: NotificationPreferenceSerializer},
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Retrieve notification preferences",
+        operation_summary="Get Notification Preferences Detail",
+        tags=["Notifications"],
+        responses={200: NotificationPreferenceSerializer},
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Update notification preferences",
+        operation_summary="Update Notification Preferences",
+        tags=["Notifications"],
+        request_body=NotificationPreferenceSerializer,
+        responses={200: NotificationPreferenceSerializer},
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Partially update notification preferences",
+        operation_summary="Partially Update Notification Preferences",
+        tags=["Notifications"],
+        request_body=NotificationPreferenceSerializer,
+        responses={200: NotificationPreferenceSerializer},
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Delete notification preferences",
+        operation_summary="Delete Notification Preferences",
+        tags=["Notifications"],
+        responses={204: "Notification preferences deleted successfully"},
+    )
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
     def get_queryset(self):
         """Return only the current user's preferences"""
         # Handle schema generation case where user might be AnonymousUser
@@ -223,6 +461,12 @@ class NotificationPreferenceViewSet(viewsets.ModelViewSet):
         """Add request to serializer context"""
         return {"request": self.request}
 
+    @swagger_auto_schema(
+        operation_description="Get current user's notification preferences",
+        operation_summary="Get My Notification Preferences",
+        tags=["Notifications"],
+        responses={200: NotificationPreferenceSerializer},
+    )
     @action(detail=False, methods=["get"])
     def my_preferences(self, request):
         """Get current user's notification preferences"""
@@ -230,6 +474,14 @@ class NotificationPreferenceViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(preferences)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        methods=["put"],
+        operation_description="Update current user's notification preferences (full update)",
+        operation_summary="Update My Notification Preferences (PUT)",
+        tags=["Notifications"],
+        request_body=NotificationPreferenceSerializer,
+        responses={200: NotificationPreferenceSerializer},
+    )
     @action(detail=False, methods=["put", "patch"])
     def update_preferences(self, request):
         """Update current user's notification preferences"""
