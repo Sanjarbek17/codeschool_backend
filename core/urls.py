@@ -146,6 +146,7 @@ schema_view = get_schema_view(
         path("api/", include("apps.progress.urls")),
         path("api/", include("apps.submissions.urls")),
         path("api/", include("apps.teacher_mgmt.urls")),
+        path("api/", include("apps.notifications.urls")),  # Add notifications URLs
         path("api/admin-panel/", include("apps.admin_panel.urls")),
         path("editor/", include("apps.editor.urls")),
         # Note: admin URLs are excluded by not including them here

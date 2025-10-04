@@ -21,5 +21,5 @@ router.register(
 )
 
 urlpatterns = [
-    path("api/", include(router.urls)),
+    path("", include(router.urls)),
 ]

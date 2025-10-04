@@ -207,10 +207,16 @@ class NotificationPreferenceViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Return only the current user's preferences"""
+        # Handle schema generation case where user might be AnonymousUser
+        if getattr(self, "swagger_fake_view", False):
+            return NotificationPreference.objects.none()
         return NotificationPreference.objects.filter(user=self.request.user)
 
     def get_object(self):
         """Get or create user's notification preferences"""
+        # Handle schema generation case where user might be AnonymousUser
+        if getattr(self, "swagger_fake_view", False):
+            return NotificationPreference()
         return get_or_create_user_preferences(self.request.user)
 
     def get_serializer_context(self):
