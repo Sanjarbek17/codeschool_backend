@@ -122,6 +122,15 @@ class UserLoginSerializer(serializers.Serializer):
         password = attrs.get("password")
 
         if username and password:
+            # First check if user exists
+            try:
+                user_obj = User.objects.get(username=username)
+            except User.DoesNotExist:
+                raise serializers.ValidationError(
+                    "User with this username does not exist."
+                )
+
+            # Then authenticate
             user = authenticate(
                 request=self.context.get("request"),
                 username=username,
@@ -129,9 +138,7 @@ class UserLoginSerializer(serializers.Serializer):
             )
 
             if not user:
-                raise serializers.ValidationError(
-                    "Unable to log in with provided credentials."
-                )
+                raise serializers.ValidationError("Incorrect password.")
 
             if not user.is_active:
                 raise serializers.ValidationError("User account is disabled.")
@@ -177,8 +184,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def get_profile_data(self, obj):
         """Get profile data based on user type."""
-        request = self.context.get('request')
-        
+        request = self.context.get("request")
+
         if obj.is_staff and obj.is_superuser:
             return {
                 "username": obj.username,
@@ -342,8 +349,8 @@ class GroupSerializer(serializers.ModelSerializer):
 
     def get_students_data(self, obj):
         """Get detailed student information."""
-        request = self.context.get('request')
-        
+        request = self.context.get("request")
+
         students_data = []
         for student in obj.students.all():
             student_info = {
@@ -353,13 +360,13 @@ class GroupSerializer(serializers.ModelSerializer):
                 "last_name": student.last_name,
                 "phone_number": student.phone_number,
             }
-            
+
             # Include admin_notes if request user is staff
             if request and request.user.is_staff:
                 student_info["admin_notes"] = student.admin_notes
-                
+
             students_data.append(student_info)
-            
+
         return students_data
 
     def get_lessons_data(self, obj):

@@ -1,0 +1,34 @@
+@token = 980e25162efb592d08371daaf652f7170eab1878
+
+### 1. Get Token for Teacher
+POST http://localhost:8000/api/login/
+Content-Type: application/json
+
+{
+  "username": "teacher_1",
+  "password": "password123"
+}
+
+### 2. Test Bulk Create Attendance
+POST http://localhost:8000/api/attendance/bulk_create/
+Content-Type: application/json
+Authorization: Token {{token}}
+
+{
+  "attendance_records": [
+    {
+      "student": 58,
+      "lesson": 31,
+      "group": 13,
+      "status": "present",
+      "date": "2023-10-04"
+    },
+    {
+      "student": 64,
+      "lesson": 31,
+      "group": 13,
+      "status": "absent",
+      "date": "2023-10-04"
+    }
+  ]
+}

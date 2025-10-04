@@ -129,7 +129,7 @@ class LoginView(APIView):
                 description="Invalid credentials",
                 examples={
                     "application/json": {
-                        "non_field_errors": ["Invalid username or password."]
+                        "non_field_errors": ["User with this username does not exist."]
                     }
                 },
             ),
