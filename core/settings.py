@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "apps.editor",
     "apps.teacher_mgmt",  # Teacher management app
     "apps.admin_panel",  # Custom admin panel
+    "apps.notifications",  # Notification system
 ]
 
 MIDDLEWARE = [

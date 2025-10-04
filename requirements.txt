@@ -4,3 +4,4 @@ django-cors-headers  # For handling Cross-Origin Resource Sharing (CORS)
 django-filter  # For filtering querysets in DRF
 drf-yasg  # For Swagger/OpenAPI documentation
 faker  # For generating realistic fake data for testing and development
+schedule  # For scheduling automated tasks like payment reminders

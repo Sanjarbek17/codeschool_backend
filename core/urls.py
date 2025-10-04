@@ -81,6 +81,8 @@ class CustomAutoSchema(SwaggerAutoSchema):
             or "teacher" in path
         ):
             return ["Teacher Management"]
+        elif path.startswith("/api/notifications"):
+            return ["Notifications"]
         elif path.startswith("/editor/execute"):
             return ["Code Editor"]
         elif path.startswith("/editor/test"):
@@ -177,6 +179,13 @@ urlpatterns = [
     path(
         "api/",
         include(("apps.teacher_mgmt.urls", "teacher_mgmt"), namespace="teacher_mgmt"),
+    ),
+    # Notifications endpoints
+    path(
+        "api/",
+        include(
+            ("apps.notifications.urls", "notifications"), namespace="notifications"
+        ),
     ),
     # Admin Panel endpoints
     path(
