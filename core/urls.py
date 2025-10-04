@@ -73,14 +73,14 @@ class CustomAutoSchema(SwaggerAutoSchema):
             "/api/task-progress"
         ):
             return ["Progress Tracking"]
+        elif path.startswith("/api/admin-panel"):
+            return ["Admin Panel"]
         elif (
             path.startswith("/api/dashboard")
             or path.startswith("/api/students")
             or "teacher" in path
         ):
             return ["Teacher Management"]
-        elif path.startswith("/api/admin-panel"):
-            return ["Admin Panel"]
         elif path.startswith("/editor/execute"):
             return ["Code Editor"]
         elif path.startswith("/editor/test"):

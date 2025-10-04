@@ -6,8 +6,10 @@
 ###
 
 ### Variables
-@baseUrl = http://localhost:8000
-@adminToken = 08221832adcbbf71de627ce705bece788edd86c3
+# @baseUrl = http://localhost:8000
+@baseUrl = https://sanjar1718.pythonanywhere.com/
+# @adminToken = 08221832adcbbf71de627ce705bece788edd86c3
+@adminToken = 07d420ed5f2afd603521dbff7e1ee32a502f0f39
 
 ###
 # STEP 1: ADMIN LOGIN
@@ -16,7 +18,7 @@ POST {{baseUrl}}/api/login/
 Content-Type: application/json
 
 {
-    "username": "admin1",
+    "username": "admin",
     "password": "admin"
 }
 
@@ -33,7 +35,7 @@ Authorization: Token {{adminToken}}
     "phone_number": "+1234567890",
     "parents_phone_number": "+1234567899",
     "admin_notes": "New student from transfer school. Strong in mathematics, needs support in English writing.",
-    "groups": []
+    "groups": ["16"]
 }
 
 ###
