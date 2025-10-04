@@ -51,6 +51,24 @@ run_python_scheduler() {
     echo ""
 }
 
+# Function to demo signal-based notifications
+demo_signal_notifications() {
+    echo -e "${YELLOW}Running signal-based notification demo...${NC}"
+    if [ -f "$SCRIPTS_DIR/demo_signals.py" ]; then
+        python "$SCRIPTS_DIR/demo_signals.py"
+    else
+        echo -e "${RED}Error: demo_signals.py not found in scripts directory${NC}"
+    fi
+    echo ""
+}
+
+# Function to trigger manual payment check via signals
+trigger_signal_check() {
+    echo -e "${YELLOW}Triggering manual payment check via signals...${NC}"
+    python manage.py trigger_payment_signals --verbose
+    echo ""
+}
+
 # Function to test payment reminders
 test_payment_reminders() {
     echo -e "${YELLOW}Testing payment reminder system...${NC}"
@@ -67,15 +85,17 @@ check_cron_status() {
 
 # Menu function
 show_menu() {
-    echo -e "${GREEN}Choose notification scheduler option:${NC}"
+    echo -e "${GREEN}Choose notification setup option:${NC}"
     echo ""
-    echo "1) Setup daily cron job (9 AM daily)"
-    echo "2) Run Python scheduler in background" 
-    echo "3) Test payment reminders (dry run)"
-    echo "4) Check current cron jobs"
-    echo "5) Skip scheduler setup"
+    echo "1) Setup daily cron job (9 AM daily) - REQUIRES CRON SUPPORT"
+    echo "2) Run Python scheduler in background - REQUIRES BACKGROUND PROCESS"
+    echo "3) Use signal-based notifications (RECOMMENDED) - NO SCHEDULING NEEDED"
+    echo "4) Demo signal-based notifications"
+    echo "5) Test payment reminders (dry run)"
+    echo "6) Check current cron jobs"
+    echo "7) Skip notification setup"
     echo ""
-    echo -n "Enter your choice (1-5): "
+    echo -n "Enter your choice (1-7): "
 }
 
 # Main menu loop
@@ -94,18 +114,36 @@ while true; do
             break
             ;;
         3)
-            test_payment_reminders
+            echo -e "${GREEN}✅ Signal-based notifications are now active!${NC}"
+            echo -e "${BLUE}Notifications will trigger automatically on these events:${NC}"
+            echo -e "${BLUE}  • Payment creation/updates${NC}"
+            echo -e "${BLUE}  • Homework assignments${NC}"
+            echo -e "${BLUE}  • Student submissions${NC}"
+            echo -e "${BLUE}  • Progress updates${NC}"
+            echo ""
+            echo -e "${YELLOW}Manual trigger available via:${NC}"
+            echo -e "${YELLOW}  API: POST /api/notifications/trigger_payment_check/${NC}"
+            echo -e "${YELLOW}  CLI: python manage.py trigger_payment_signals${NC}"
+            echo ""
+            trigger_signal_check
+            break
             ;;
         4)
-            check_cron_status
+            demo_signal_notifications
             ;;
         5)
-            echo -e "${BLUE}Skipping scheduler setup...${NC}"
+            test_payment_reminders
+            ;;
+        6)
+            check_cron_status
+            ;;
+        7)
+            echo -e "${BLUE}Skipping notification setup...${NC}"
             echo ""
             break
             ;;
         *)
-            echo -e "${RED}Invalid option. Please choose 1-5.${NC}"
+            echo -e "${RED}Invalid option. Please choose 1-7.${NC}"
             echo ""
             ;;
     esac

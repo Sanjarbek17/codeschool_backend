@@ -134,6 +134,27 @@ class NotificationViewSet(viewsets.ModelViewSet):
         )
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
+    @action(detail=False, methods=["post"], permission_classes=[IsAdminUser])
+    def trigger_payment_check(self, request):
+        """Manually trigger bulk payment check (admin only)"""
+        from .signals import trigger_bulk_payment_check
+
+        try:
+            notifications_sent = trigger_bulk_payment_check()
+            return Response(
+                {
+                    "success": True,
+                    "message": f"Payment check completed. Sent {notifications_sent} notifications.",
+                    "notifications_sent": notifications_sent,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response(
+                {"success": False, "message": f"Error during payment check: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
 
 class PaymentNotificationViewSet(viewsets.ModelViewSet):
     """
