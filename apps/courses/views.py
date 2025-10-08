@@ -685,34 +685,156 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["POST"])
     def bulk_create(self, request):
         """Create multiple attendance records at once."""
-        attendance_data = request.data.get("attendance_records", [])
+        try:
+            # Validate request data structure
+            if not isinstance(request.data, dict):
+                return Response(
+                    {
+                        "error": "Invalid request format. Expected JSON object.",
+                        "details": f"Received: {type(request.data).__name__}",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-        if not attendance_data:
-            return Response(
-                {"error": "attendance_records list is required"},
-                status=status.HTTP_400_BAD_REQUEST,
+            attendance_data = request.data.get("attendance_records", [])
+
+            if not attendance_data:
+                return Response(
+                    {
+                        "error": "attendance_records list is required",
+                        "details": "Please provide 'attendance_records' as an array of attendance objects",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Validate that attendance_data is a list
+            if not isinstance(attendance_data, list):
+                return Response(
+                    {
+                        "error": "attendance_records must be a list/array",
+                        "details": f"Received: {type(attendance_data).__name__}",
+                        "received_data": str(attendance_data)[
+                            :200
+                        ],  # Limit to first 200 chars
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Validate each item in the list
+            for index, item in enumerate(attendance_data):
+                if not isinstance(item, dict):
+                    return Response(
+                        {
+                            "error": f"Item at index {index} must be an object",
+                            "details": f"Expected object, received: {type(item).__name__}",
+                            "problematic_item": str(item)[:100],
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            serializer = AttendanceCreateUpdateSerializer(
+                data=attendance_data, many=True
             )
 
-        serializer = AttendanceCreateUpdateSerializer(data=attendance_data, many=True)
+            if serializer.is_valid():
+                try:
+                    # Create attendance records with teacher assignment
+                    attendance_records = []
 
-        if serializer.is_valid():
-            # Create attendance records with teacher assignment
-            attendance_records = []
-            for attendance_data_item in serializer.validated_data:
-                # Set teacher to current user if they are a teacher
-                if hasattr(request.user, "teacher_profile"):
-                    attendance_data_item["teacher"] = request.user.teacher_profile
+                    for index, attendance_data_item in enumerate(
+                        serializer.validated_data
+                    ):
+                        try:
+                            # Set teacher to current user if they are a teacher
+                            if hasattr(request.user, "teacher_profile"):
+                                attendance_data_item["teacher"] = (
+                                    request.user.teacher_profile
+                                )
 
-                attendance_records.append(Attendance(**attendance_data_item))
+                            # Create the attendance object
+                            attendance_obj = Attendance(**attendance_data_item)
+                            attendance_records.append(attendance_obj)
 
-            # Bulk create the records
-            Attendance.objects.bulk_create(attendance_records)
+                        except Exception as e:
+                            return Response(
+                                {
+                                    "error": f"Error creating attendance object at index {index}",
+                                    "details": str(e),
+                                    "problematic_data": attendance_data_item,
+                                },
+                                status=status.HTTP_400_BAD_REQUEST,
+                            )
 
+                    # Bulk create the records
+                    try:
+                        Attendance.objects.bulk_create(attendance_records)
+
+                        return Response(
+                            {
+                                "success": True,
+                                "message": f"{len(attendance_records)} attendance records created successfully",
+                                "created_count": len(attendance_records),
+                            },
+                            status=status.HTTP_201_CREATED,
+                        )
+
+                    except Exception as e:
+                        return Response(
+                            {
+                                "error": "Database error during bulk creation",
+                                "details": str(e),
+                                "attempted_records": len(attendance_records),
+                            },
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        )
+
+                except Exception as e:
+                    return Response(
+                        {
+                            "error": "Unexpected error during attendance record processing",
+                            "details": str(e),
+                        },
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+            else:
+                # Return detailed validation errors
+                detailed_errors = []
+                if hasattr(serializer, "errors") and isinstance(
+                    serializer.errors, list
+                ):
+                    for index, error_dict in enumerate(serializer.errors):
+                        if error_dict:  # Only include non-empty error dictionaries
+                            detailed_errors.append(
+                                {
+                                    "index": index,
+                                    "errors": error_dict,
+                                    "data": (
+                                        attendance_data[index]
+                                        if index < len(attendance_data)
+                                        else None
+                                    ),
+                                }
+                            )
+
+                return Response(
+                    {
+                        "error": "Validation failed for attendance records",
+                        "validation_errors": (
+                            detailed_errors if detailed_errors else serializer.errors
+                        ),
+                        "total_items": len(attendance_data),
+                        "failed_items": len([e for e in serializer.errors if e]),
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        except Exception as e:
+            # Catch-all for any unexpected errors
             return Response(
                 {
-                    "message": f"{len(attendance_records)} attendance records created successfully"
+                    "error": "Unexpected server error",
+                    "details": str(e),
+                    "message": "Please check your request format and try again",
                 },
-                status=status.HTTP_201_CREATED,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

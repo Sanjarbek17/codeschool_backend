@@ -32,3 +32,54 @@ Authorization: Token {{token}}
     }
   ]
 }
+
+### 3. Test Error Scenarios - Missing attendance_records field
+POST http://localhost:8000/api/attendance/bulk_create/
+Content-Type: application/json
+Authorization: Token {{token}}
+
+{
+  "wrong_field": []
+}
+
+### 4. Test Error Scenarios - Invalid data type for attendance_records
+POST http://localhost:8000/api/attendance/bulk_create/
+Content-Type: application/json
+Authorization: Token {{token}}
+
+{
+  "attendance_records": "should be array"
+}
+
+### 5. Test Error Scenarios - Invalid item in array
+POST http://localhost:8000/api/attendance/bulk_create/
+Content-Type: application/json
+Authorization: Token {{token}}
+
+{
+  "attendance_records": [
+    {
+      "student": 58,
+      "lesson": 31,
+      "group": 13,
+      "status": "present",
+      "date": "2023-10-04"
+    },
+    "invalid string item"
+  ]
+}
+
+### 6. Test Error Scenarios - Missing required fields
+POST http://localhost:8000/api/attendance/bulk_create/
+Content-Type: application/json
+Authorization: Token {{token}}
+
+{
+  "attendance_records": [
+    {
+      "student": 58,
+      "status": "present",
+      "date": "2023-10-04"
+    }
+  ]
+}
