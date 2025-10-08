@@ -696,15 +696,21 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         serializer = AttendanceCreateUpdateSerializer(data=attendance_data, many=True)
 
         if serializer.is_valid():
-            # Set teacher to current user if they are a teacher
-            if hasattr(request.user, "teacher_profile"):
-                for attendance in serializer.validated_data:
-                    attendance["teacher"] = request.user.teacher_profile
+            # Create attendance records with teacher assignment
+            attendance_records = []
+            for attendance_data_item in serializer.validated_data:
+                # Set teacher to current user if they are a teacher
+                if hasattr(request.user, "teacher_profile"):
+                    attendance_data_item["teacher"] = request.user.teacher_profile
 
-            serializer.save()
+                attendance_records.append(Attendance(**attendance_data_item))
+
+            # Bulk create the records
+            Attendance.objects.bulk_create(attendance_records)
+
             return Response(
                 {
-                    "message": f"{len(attendance_data)} attendance records created successfully"
+                    "message": f"{len(attendance_records)} attendance records created successfully"
                 },
                 status=status.HTTP_201_CREATED,
             )
